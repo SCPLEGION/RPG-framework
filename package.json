@@ -1,0 +1,16 @@
+{
+  "name": "scprpg",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.13",
+    "discord.js": "^14.18.0"
+  }
+}
