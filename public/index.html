@@ -5,34 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Viewer</title>
     <style>
+        /* General Styles */
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
         }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+            color: #444;
+        }
+
+        /* Table Styles */
         table {
-            width: 100%;
+            width: 90%;
+            margin: 20px auto;
             border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         th, td {
             border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px;
+            text-align: left;
         }
+
         th {
-            background-color: #f4f4f4;
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
         }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Messages Section Styles */
         .messages {
-            margin-top: 20px;
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
+
         .message {
             border: 1px solid #ddd;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .message strong {
+            color: #007BFF;
+        }
+
+        .messages h2 {
+            margin-top: 0;
+            color: #444;
+        }
+
+        .messages button {
+            display: block;
+            margin: 20px auto 0;
+            background-color: #dc3545;
+        }
+
+        .messages button:hover {
+            background-color: #a71d2a;
         }
     </style>
 </head>
 <body>
     <h1>Ticket Viewer</h1>
+
+    <!-- Tickets Table -->
     <table id="ticketsTable">
         <thead>
             <tr>
@@ -50,6 +121,7 @@
         </tbody>
     </table>
 
+    <!-- Messages Section -->
     <div class="messages" id="messagesSection" style="display: none;">
         <h2>Messages for Ticket <span id="ticketId"></span></h2>
         <div id="messagesList"></div>
