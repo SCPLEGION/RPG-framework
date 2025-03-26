@@ -4,10 +4,14 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "concurrently \"node src/index.js\" \"node src/app.js\""
   },
   "dependencies": {
-    "dotenv": "^16.0.0"
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.0.0",
+    "express": "^4.21.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@types/node": "^22.13.13",
