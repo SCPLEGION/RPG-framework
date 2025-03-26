@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .messages {
+            margin-top: 20px;
+        }
+        .message {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ticket Viewer</h1>
+    <table id="ticketsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>User</th>
+                <th>Created At</th>
+                <th>Claimed By</th>
+                <th>Closed By</th>
+                <th>Messages</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Tickets will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <div class="messages" id="messagesSection" style="display: none;">
+        <h2>Messages for Ticket <span id="ticketId"></span></h2>
+        <div id="messagesList"></div>
+        <button onclick="closeMessages()">Close</button>
+    </div>
+
+    <script>
+        async function fetchTickets() {
+            const response = await fetch("/tickets");
+            const tickets = await response.json();
+            const tableBody = document.querySelector("#ticketsTable tbody");
+
+            tickets.forEach(ticket => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${ticket.id || "N/A"}</td>
+                    <td>${ticket.type}</td>
+                    <td>${ticket.userTag}</td>
+                    <td>${new Date(ticket.createdAt).toLocaleString()}</td>
+                    <td>${ticket.claimedBy || "Unclaimed"}</td>
+                    <td>${ticket.closedBy || "Open"}</td>
+                    <td><button onclick="viewMessages(${ticket.id})">View Messages</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        async function viewMessages(ticketId) {
+            const response = await fetch(`/tickets/${ticketId}`);
+            const ticket = await response.json();
+
+            const messagesSection = document.getElementById("messagesSection");
+            const messagesList = document.getElementById("messagesList");
+            const ticketIdSpan = document.getElementById("ticketId");
+
+            ticketIdSpan.textContent = ticketId;
+            messagesList.innerHTML = "";
+
+            if (ticket.messages && ticket.messages.length > 0) {
+                ticket.messages.forEach(message => {
+                    const messageDiv = document.createElement("div");
+                    messageDiv.className = "message";
+                    messageDiv.innerHTML = `
+                        <strong>${message.authorTag}</strong> (${new Date(message.timestamp).toLocaleString()}):<br>
+                        ${message.content}
+                    `;
+                    messagesList.appendChild(messageDiv);
+                });
+            } else {
+                messagesList.innerHTML = "<p>No messages found for this ticket.</p>";
+            }
+
+            messagesSection.style.display = "block";
+        }
+
+        function closeMessages() {
+            document.getElementById("messagesSection").style.display = "none";
+        }
+
+        fetchTickets();
+    </script>
+</body>
+</html>

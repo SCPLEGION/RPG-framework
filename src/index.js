@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import dotenv from 'dotenv';
-import { redirect } from './modules/redirector.js';
+import { redirect, handleInteraction } from './modules/redirector.js';
 
 dotenv.config();
 
@@ -13,6 +13,10 @@ client.once('ready', () => {
 client.on('messageCreate', (message) => {
     if (message.author.bot) return;
     redirect(message);
+});
+
+client.on('interactionCreate', (interaction) => {
+    handleInteraction(interaction);
 });
 
 client.login(process.env.DISCORD_TOKEN);

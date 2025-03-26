@@ -1,21 +1,16 @@
-export{ redirect, rreply }
-import { Message } from "discord.js";
-    
-function redirect(msg) {
-    msg.content.startsWith('!ping') ? rreply(msg,"Pong") : null;
-    msg.channelId === '1354178493784654054' ? rreply(msg,"This is a test") : null;
-}
+import { createTicket } from "./ticket.js";
+import { handleInteraction } from "./interaction.js";
 
-function rreply(msg,data) {
-    msg.reply(data);
-}
+export function redirect(msg) {
+    if (msg.author.bot) return;
 
-
-function ticket(msg,type) {
-    if (type === 'create') {
-        msg.reply("Ticket created");
-    }
-    if (type === 'close') {
-        msg.reply("Ticket closed");
+    if (msg.channelId === '1354178493784654054') {
+        createTicket(msg, 'Pomoc');
+    } else if (msg.channelId === '1354178654753521674') {
+        createTicket(msg, 'Pytanie');
+    } else if (msg.channelId === '1354178702782763118') {
+        createTicket(msg, 'Propozycja');
     }
 }
+
+export { handleInteraction };
