@@ -113,6 +113,7 @@
                 <th>Created At</th>
                 <th>Claimed By</th>
                 <th>Closed By</th>
+                <th>Closing Reason</th>
                 <th>Messages</th>
             </tr>
         </thead>
@@ -143,6 +144,7 @@
                     <td>${new Date(ticket.createdAt).toLocaleString()}</td>
                     <td>${ticket.claimedBy || "Unclaimed"}</td>
                     <td>${ticket.closedBy || "Open"}</td>
+                    <td>${ticket.closingReason || "N/A"}</td> <!-- Display closing reason -->
                     <td><button onclick="viewMessages(${ticket.id})">View Messages</button></td>
                 `;
                 tableBody.appendChild(row);

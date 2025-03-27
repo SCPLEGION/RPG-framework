@@ -25,6 +25,7 @@ if (config.storage === "sqlite") {
                 createdAt TEXT,
                 claimedBy TEXT,
                 closedBy TEXT,
+                closingReason TEXT, -- New column for closing reason
                 messages TEXT -- New column to store ticket messages as JSON
             )
         `);
@@ -44,7 +45,8 @@ export const loadTickets = async () => {
         const rows = await db.all("SELECT * FROM tickets");
         return rows.map(row => ({
             ...row,
-            messages: JSON.parse(row.messages || "[]") // Parse messages from JSON
+            messages: JSON.parse(row.messages || "[]"),
+            closingReason: row.closingReason || null // Include closing reason
         }));
     }
 };
@@ -59,8 +61,8 @@ export const saveTickets = async (tickets) => {
     } else if (config.storage === "sqlite") {
         await db.exec("DELETE FROM tickets");
         const insertStmt = `
-            INSERT INTO tickets (type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, messages)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tickets (type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, messages)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         for (const ticket of tickets) {
             await db.run(insertStmt, [
@@ -72,6 +74,7 @@ export const saveTickets = async (tickets) => {
                 ticket.createdAt,
                 ticket.claimedBy,
                 ticket.closedBy,
+                ticket.closingReason, // New column for closing reason
                 JSON.stringify(ticket.messages || []) // Save messages as JSON
             ]);
         }
