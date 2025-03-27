@@ -24,12 +24,10 @@ export async function createTicket(msg, type) {
 
     const embed = new EmbedBuilder()
         .setTitle("Ticket")
-        .setDescription("A new ticket has been created")
         .addFields(
-            { name: "Type", value: type },
-            { name: "User", value: msg.author.tag },
-            { name: "Ticket Number", value: `${ticketCounters[type]}` },
-            { name: "Dane", value: msg.content}
+            { name: "Typ", value: type },
+            { name: "Author", value: `<@${msg.author.id}>` },
+            { name: "Info", value: msg.content}
         );
 
     const actionRow = new ActionRowBuilder()
