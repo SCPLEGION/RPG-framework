@@ -10,19 +10,24 @@ export async function handleInteraction(interaction) {
     const tickets = await loadTickets();
     const ticket = tickets.find(t => t.channelId === channel.id);
 
+    // Check if the ticket exists
+    if (!ticket) {
+        interaction.reply({ content: 'This ticket no longer exists in the database.', ephemeral: true });
+        return;
+    }
+
     if (customId === 'claim_ticket') {
         if (claimedTickets.has(channel.id)) {
             interaction.reply({ content: 'This ticket is already claimed.', ephemeral: true });
         } else {
             claimedTickets.set(channel.id, user.id);
-            if (ticket) {
-                ticket.claimedBy = user.tag;
-                await saveTickets(tickets);
-            }
+            ticket.claimedBy = user.tag; // Update the ticket's claimedBy field
+            await saveTickets(tickets);
             interaction.reply({ content: `Ticket claimed by ${user.tag}.`, ephemeral: false });
         }
     } else if (customId === 'close_ticket') {
         if (!claimedTickets.has(channel.id) || claimedTickets.get(channel.id) === user.id) {
+<<<<<<< Updated upstream
             // Show a modal to collect the closing reason
             const modal = new ModalBuilder()
                 .setCustomId('close_ticket_modal')
@@ -50,6 +55,11 @@ export async function handleInteraction(interaction) {
             await saveTickets(tickets);
         }
         if (channel) {
+=======
+            ticket.closedBy = user.tag; // Update the ticket's closedBy field
+            await saveTickets(tickets);
+
+>>>>>>> Stashed changes
             channel.delete().catch(error => {
                 console.error('Error closing ticket channel:', error);
                 interaction.reply({ content: 'There was an error closing the ticket.', ephemeral: true });
