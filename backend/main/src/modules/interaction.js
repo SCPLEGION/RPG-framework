@@ -27,8 +27,8 @@ export async function handleInteraction(interaction) {
         }
     } else if (customId === 'close_ticket') {
         if (!claimedTickets.has(channel.id) || claimedTickets.get(channel.id) === user.id) {
-<<<<<<< Updated upstream
-            // Show a modal to collect the closing reason
+
+
             const modal = new ModalBuilder()
                 .setCustomId('close_ticket_modal')
                 .setTitle('Close Ticket');
@@ -55,11 +55,9 @@ export async function handleInteraction(interaction) {
             await saveTickets(tickets);
         }
         if (channel) {
-=======
+
             ticket.closedBy = user.tag; // Update the ticket's closedBy field
             await saveTickets(tickets);
-
->>>>>>> Stashed changes
             channel.delete().catch(error => {
                 console.error('Error closing ticket channel:', error);
                 interaction.reply({ content: 'There was an error closing the ticket.', ephemeral: true });

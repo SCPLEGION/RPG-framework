@@ -1,0 +1,51 @@
+// src/app.js
+
+import express from 'express';
+import userRoutes from './routes/userRoutes.js';
+import ticketRoutes from './routes/ticketRoutes.js';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+
+// Swagger setup
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'My API',
+      version: '1.0.0',
+      description: 'API Documentation using Swagger with Express',
+    },
+  },
+  apis: ['./routes/*.js'], // Pointing to the route files for Swagger
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+
+// Serve Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Use routes
+app.use('/api', userRoutes);
+app.use('/api', ticketRoutes);
+
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to the SCP RPG Discord Bot API!',
+  });
+});
+
+app.use((req, res, next) => {
+  console.log('Time:', Date.now())
+  next()
+})
+
+// Start the server
+app.listen(3000, () => {
+  console.log('Server is running on http://localhost:3000');
+  console.log('Swagger UI is available at http://localhost:3000/api-docs');
+});

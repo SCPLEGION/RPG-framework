@@ -1,20 +1,36 @@
 {
-  "name": "scprpg",
+  "name": "scprpg-discord-bot",
   "version": "1.0.0",
-  "type": "module",
-  "main": "src/index.js",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "concurrently \"node src/index.js\" \"node src/app.js\""
+    "devmain": "concurrently \"npm run server\" \"start npm run client\"",
+    "server": "cd backend/main && npm run dev",
+    "client": "cd frontend/main && npm run dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SCPLEGION/SCPRPG-discord-bot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/SCPLEGION/SCPRPG-discord-bot/issues"
+  },
+  "homepage": "https://github.com/SCPLEGION/SCPRPG-discord-bot#readme",
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   },
   "dependencies": {
-    "concurrently": "^8.2.2",
-    "dotenv": "^16.0.0",
-    "express": "^4.21.2",
-    "sqlite": "^5.1.1",
-    "sqlite3": "^5.1.7"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.13",
-    "discord.js": "^14.18.0"
+    "@vitejs/plugin-react-swc": "^3.8.1",
+    "mui": "^0.0.1",
+    "nodemon": "^3.1.9",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "vite": "^6.2.6"
   }
 }
