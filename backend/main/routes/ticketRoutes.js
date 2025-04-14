@@ -297,4 +297,34 @@ router.post('/tickets/:id/reply', async (req, res) => {
 });
 
 
+
+/**
+ * @swagger
+ * /api/tickets/count:
+ *   get:
+ *     description: Get the total count of tickets
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved ticket count
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ *               example:
+ *                 count: 42
+ */
+router.get('/tickets/count', async (req, res) => {
+    try {
+        const tickets = await loadTickets();
+        res.json({ count: tickets.length });
+    } catch (error) {
+        console.error("Error getting ticket count:", error);
+        res.status(500).json({ error: "Failed to get ticket count" });
+    }
+});
+
+
 export default router;
