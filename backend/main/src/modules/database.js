@@ -21,6 +21,7 @@ if (config.storage === "sqlite") {
                 userId TEXT,
                 userTag TEXT,
                 ticketNumber INTEGER,
+                status INTEGER,
                 channelId TEXT,
                 createdAt TEXT,
                 claimedBy TEXT,
@@ -43,6 +44,9 @@ export const loadTickets = async () => {
         }
     } else if (config.storage === "sqlite") {
         const rows = await db.all("SELECT * FROM tickets");
+        for (const row of rows) {
+            updateTicketStatus(row.id);
+        }
         return rows.map(row => ({
             ...row,
             messages: JSON.parse(row.messages || "[]"),
@@ -59,13 +63,26 @@ export const saveTickets = async (tickets) => {
             console.error('Error saving tickets:', error);
         }
     } else if (config.storage === "sqlite") {
-        await db.exec("DELETE FROM tickets");
-        const insertStmt = `
-            INSERT INTO tickets (type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, messages)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        const insertOrUpdateStmt = `
+            INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, messages, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                type = excluded.type,
+                userId = excluded.userId,
+                userTag = excluded.userTag,
+                ticketNumber = excluded.ticketNumber,
+                channelId = excluded.channelId,
+                createdAt = excluded.createdAt,
+                claimedBy = excluded.claimedBy,
+                closedBy = excluded.closedBy,
+                closingReason = excluded.closingReason,
+                messages = excluded.messages,
+                status = excluded.status
         `;
+
         for (const ticket of tickets) {
-            await db.run(insertStmt, [
+            await db.run(insertOrUpdateStmt, [
+                ticket.id || null, // Use the ticket ID if it exists, otherwise null for auto-increment
                 ticket.type,
                 ticket.userId,
                 ticket.userTag,
@@ -74,9 +91,49 @@ export const saveTickets = async (tickets) => {
                 ticket.createdAt,
                 ticket.claimedBy,
                 ticket.closedBy,
-                ticket.closingReason, // New column for closing reason
-                JSON.stringify(ticket.messages || []) // Save messages as JSON
+                ticket.closingReason,
+                JSON.stringify(ticket.messages || []),
+                ticket.status
             ]);
         }
+    }
+};
+
+// Function to update the status of a ticket based on the hierarchy
+export const updateTicketStatus = async (ticketId) => {
+    if (config.storage === "sqlite") {
+        const ticket = await db.get("SELECT * FROM tickets WHERE id = ?", [ticketId]);
+        
+        if (ticket) {
+            let status;
+
+            // Check if the ticket is closed
+            if (ticket.closedBy !== null) {
+                status = 0; // closed
+            } else if (ticket.claimedBy !== null) {
+                status = 1; // claimed
+            } else {
+                status = 2; // unclaimed
+            }
+
+            // Update the status in the database
+            await db.run("UPDATE tickets SET status = ? WHERE id = ?", [status, ticketId]);
+        }
+    }
+};
+
+// Function to claim a ticket
+export const claimTicket = async (ticketId, userId) => {
+    if (config.storage === "sqlite") {
+        await db.run("UPDATE tickets SET claimedBy = ? WHERE id = ?", [userId, ticketId]);
+        await updateTicketStatus(ticketId); // Update status after claiming
+    }
+};
+
+// Function to close a ticket
+export const closeTicket = async (ticketId, userId, reason) => {
+    if (config.storage === "sqlite") {
+        await db.run("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?", [userId, reason, ticketId]);
+        await updateTicketStatus(ticketId); // Update status after closing
     }
 };

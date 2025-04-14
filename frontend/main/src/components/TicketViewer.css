@@ -1,0 +1,221 @@
+.ticket-viewer {
+    display: flex;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.ticket-sidebar {
+    width: 300px;
+    background-color: #f4f4f4;
+    border-right: 1px solid #ccc;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.ticket-sidebar h2 {
+    margin-bottom: 20px;
+}
+
+.ticket-item {
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s;
+}
+
+.ticket-item:hover {
+    background-color: #f9f9f9;
+}
+
+.ticket-item.active {
+    background-color: #e0f7fa;
+    border-color: #00796b;
+}
+
+.ticket-icon {
+    color: #00796b;
+}
+
+.ticket-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.ticket-details h2 {
+    margin-bottom: 20px;
+}
+
+.ticket-details p {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.detail-icon {
+    color: #00796b;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.refresh-button {
+    background-color: #00796b;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.refresh-button:hover {
+    background-color: #005a4c;
+}
+
+.refresh-icon {
+    font-size: 16px;
+}
+
+/* Ticket details in the top bar */
+.ticket-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #00796b;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #005a4c;
+}
+
+.ticket-topbar .ticket-details {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 14px;
+    color: #e0f7fa;
+}
+
+.ticket-topbar .ticket-details .ticket-id {
+    font-weight: bold;
+}
+
+.ticket-topbar .ticket-details .ticket-status {
+    font-style: italic;
+    color: #b2dfdb;
+}
+
+.ticket-topbar .close-ticket-button {
+    background-color: #e57373;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.ticket-topbar .close-ticket-button:hover {
+    background-color: #d32f2f;
+}
+
+/* Message list */
+.message-list {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-top: 1px solid #ccc;
+}
+
+.message-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.message-item .message-author {
+    font-weight: bold;
+    color: #00796b;
+}
+
+.message-item .message-content {
+    font-size: 14px;
+    color: #333;
+}
+
+/* Message viewer */
+.message-viewer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.message-viewer .message-header {
+    background-color: #00796b;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    border-bottom: 1px solid #005a4c;
+}
+
+.message-viewer .message-list {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #f9f9f9;
+}
+
+.message-viewer .message-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.message-viewer .message-item .message-author {
+    font-weight: bold;
+    color: #00796b;
+}
+
+.message-viewer .message-item .message-content {
+    font-size: 14px;
+    color: #333;
+}
+
+.message-viewer .message-item .message-timestamp {
+    font-size: 12px;
+    color: #999;
+    text-align: right;
+}

@@ -19,4 +19,13 @@ client.on('interactionCreate', (interaction) => {
     handleInteraction(interaction);
 });
 
+export function sendmsg(channelId, msg) {
+    const channel = client.channels.cache.get(channelId);
+    if (channel) {
+        channel.send(msg);
+    } else {
+        console.error(`Channel with ID ${channelId} not found.`);
+    }
+}
+
 client.login(process.env.DISCORD_TOKEN);

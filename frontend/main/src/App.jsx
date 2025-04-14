@@ -1,8 +1,5 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import TicketViewer from './components/TicketViewer.jsx'
-import './App.css'
+import AboutPage from './main/index.jsx'
 import { Routes, Route } from 'react-router-dom'
 
 function App() {
@@ -10,12 +7,13 @@ function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
+      <Route path="/tickets" element={<Tickets />} />
     </Routes>
   )
 }
 
 function Home() {
-  return TicketViewer()
+  return AboutPage()
 }
 
 function About() {

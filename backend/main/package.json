@@ -5,9 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run main\" \"npm run bot\"",
+    "dev": "nodemon app.js",
     "main": "nodemon app.js",
-    "bot": "nodemon src/bot.js",
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
