@@ -28,6 +28,12 @@ if (config.storage === "sqlite") {
                 closedBy TEXT,
                 closingReason TEXT, -- New column for closing reason
                 messages TEXT -- New column to store ticket messages as JSON
+            );
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT,
+                discriminator TEXT,
+                role TEXT
             )
         `);
     })();
