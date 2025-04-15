@@ -33,7 +33,8 @@ if (config.storage === "sqlite") {
                 id TEXT PRIMARY KEY,
                 username TEXT,
                 discriminator TEXT,
-                role TEXT
+                role TEXT,
+                token TEXTs
             )
         `);
     })();
