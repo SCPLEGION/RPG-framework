@@ -6,6 +6,7 @@ import ticketRoutes from './routes/ticketRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
 
 const app = express();
 
@@ -34,6 +35,12 @@ console.log(swaggerDocs)
 app.use('/api', userRoutes);
 app.use('/api', ticketRoutes);
 app.use('/auth', authRoutes);
+app.get('/api/data', (req, res) => {
+  res.json({
+    message: swaggerDocs,
+  });
+});
+
 
 app.get('/', (req, res) => {
   res.json({
