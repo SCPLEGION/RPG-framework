@@ -10,6 +10,8 @@ const router = express.Router();
  * @swagger
  * /api/tickets:
  *   get:
+ *     tags:
+ *     - tickets
  *     description: Get all tickets
  *     responses:
  *       200:
@@ -49,6 +51,8 @@ router.get('/tickets', async (req, res) => {
  * @swagger
  * /api/tickets:
  *   post:
+ *     tags:
+ *     - tickets
  *     description: Create a new ticket
  *     requestBody:
  *       required: true
@@ -98,6 +102,8 @@ router.post('/tickets', async (req, res) => {
  * @swagger
  * /api/tickets/{id}:
  *   get:
+ *     tags:
+ *     - tickets
  *     description: Get a specific ticket by ID
  *     parameters:
  *       - in: path
@@ -145,6 +151,8 @@ router.get('/tickets/:id', async (req, res) => {
  * @swagger
  * /api/tickets/{id}:
  *   put:
+ *     tags:
+ *     - tickets
  *     description: Update a specific ticket by ID
  *     parameters:
  *       - in: path
@@ -199,6 +207,8 @@ router.put('/tickets/:id', async (req, res) => {
  * @swagger
  * /api/tickets/{id}:
  *   delete:
+ *     tags:
+ *     - tickets
  *     description: Delete a specific ticket by ID
  *     parameters:
  *       - in: path
@@ -238,6 +248,8 @@ router.delete('/tickets/:id', async (req, res) => {
  * @swagger
  * /api/tickets/{id}/reply:
  *   post:
+ *     tags:
+ *     - tickets
  *     description: Reply to a specific ticket by ID
  *     parameters:
  *       - in: path
@@ -302,6 +314,8 @@ router.post('/tickets/:id/reply', async (req, res) => {
  * @swagger
  * /api/tickets/count:
  *   get:
+ *     tags:
+ *     - tickets
  *     description: Get the total count of tickets
  *     responses:
  *       200:
