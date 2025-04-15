@@ -4,6 +4,7 @@ import login from './main/login.jsx';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import Dashboard from './components/dashboard.jsx';
+import Docs from './components/docs.jsx';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/dashboard" element={<Dashboardjsx />} />
       <Route path="/login/callback" element={<AuthCallback />} />
+      <Route path="/docs" element={<Docs />} />
       {/* Add more routes as needed */}
     </Routes>
   );
@@ -68,7 +70,7 @@ function AuthCallback() {
       console.log('User authenticated:', userId, username);
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } else {
-      console.log('Authentication failed or user data missing');
+      console.log('1Authentication failed or user data missing');
       navigate('/login'); // Redirect to login if authentication fails
     }
   }, [navigate]);
