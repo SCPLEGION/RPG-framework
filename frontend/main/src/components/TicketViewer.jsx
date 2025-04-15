@@ -234,22 +234,51 @@ const TicketViewer = () => {
 
                             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                                 {sortedMessages.length > 0 ? (
-                                    sortedMessages.map((message) => (
-                                        <Card key={message.id} variant="outlined" sx={{ mb: 2 }}>
-                                            <CardContent>
-                                                <Stack direction="row" alignItems="center" spacing={1}>
-                                                    <Avatar src={message.authorAvatar} />
-                                                    <Typography variant="subtitle2" color="primary">
-                                                        {message.authorTag}
+                                    sortedMessages.map((message) => {
+                                        const isImage = /\.(gif|jpe?g|png|webp)$/i.test(message.content); // Check if the message is an image URL
+                                        const isLink = /^https?:\/\/[^\s]+$/.test(message.content); // Check if the message is a URL
+
+                                        return (
+                                            <Card key={message.id} variant="outlined" sx={{ mb: 2 }}>
+                                                <CardContent>
+                                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                                        <Avatar src={message.authorAvatar} />
+                                                        <Typography variant="subtitle2" color="primary">
+                                                            {message.authorTag}
+                                                        </Typography>
+                                                    </Stack>
+                                                    {isImage ? (
+                                                        <Box sx={{ mt: 1 }}>
+                                                            <img
+                                                                src={message.content}
+                                                                alt="Message content"
+                                                                style={{ maxWidth: '100%', borderRadius: '8px' }}
+                                                            />
+                                                        </Box>
+                                                    ) : isLink ? (
+                                                        <Typography variant="body1" sx={{ mt: 1 }}>
+                                                            <a 
+                                                                href={message.content} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                role="img"
+                                                                style={{ color: 'inherit', textDecoration: 'underline' }}
+                                                            >
+                                                                {message.content}
+                                                            </a>
+                                                        </Typography>
+                                                    ) : (
+                                                        <Typography variant="body1" sx={{ mt: 1 }}>
+                                                            {message.content}
+                                                        </Typography>
+                                                    )}
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {new Date(message.timestamp).toLocaleString()}
                                                     </Typography>
-                                                </Stack>
-                                                <Typography variant="body1" sx={{ mt: 1 }}>{message.content}</Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {new Date(message.timestamp).toLocaleString()}
-                                                </Typography>
-                                            </CardContent>
-                                        </Card>
-                                    ))
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })
                                 ) : (
                                     <Typography>No messages available</Typography>
                                 )}

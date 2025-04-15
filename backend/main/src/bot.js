@@ -11,7 +11,6 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
     redirect(message);
 });
 

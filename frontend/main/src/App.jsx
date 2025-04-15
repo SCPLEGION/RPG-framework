@@ -43,6 +43,7 @@ function Dashboardjsx() {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
 
     if (!isAuthenticated) {
+      console.log('User is not authenticated');
       // Redirect to the login page if not authenticated
       navigate('/login');
     }
@@ -64,8 +65,10 @@ function AuthCallback() {
       // Save user data to localStorage
       localStorage.setItem('user', JSON.stringify({ userId, username }));
       localStorage.setItem('isAuthenticated', 'true');
+      console.log('User authenticated:', userId, username);
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } else {
+      console.log('Authentication failed or user data missing');
       navigate('/login'); // Redirect to login if authentication fails
     }
   }, [navigate]);

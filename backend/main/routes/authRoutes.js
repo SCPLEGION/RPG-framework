@@ -2,6 +2,7 @@ import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { db } from '../src/modules/database.js';
+import sha256 from 'crypto-js/sha256.js';
 
 dotenv.config();
 
@@ -10,6 +11,11 @@ const router = express.Router();
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost:3001/auth/discord/callback';
+
+function encrypt(x, y) {
+  const hashed = sha256(x + y).toString();
+  return hashed;
+}
 
 // Step 1: Redirect to Discord OAuth
 router.get('/discord', (req, res) => {
@@ -46,10 +52,12 @@ router.get('/discord/callback', async (req, res) => {
 
     const { id, username, discriminator } = userResponse.data;
 
+    let token = encrypt(id, username);
+
     // Save user info to the database
     await db.run(
-      `INSERT INTO users (id, username, discriminator, role) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
-      [id, username, discriminator, 'user', username, discriminator]
+      `INSERT INTO users (id, username, discriminator, role, token) VALUES (?, ?, ?, ?,?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
+      [id, username, discriminator, 'user',token , username, discriminator]
     );
 
     // Redirect to frontend with user info
