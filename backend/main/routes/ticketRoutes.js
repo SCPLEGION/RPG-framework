@@ -1,7 +1,7 @@
 // src/routes/ticketRoutes.js
 
 import express from 'express';
-import { loadTickets, saveTickets } from "../src/modules/database.js";
+import { loadTickets, saveTickets,querry } from "../src/modules/database.js";
 import { sendmsg } from '../src/bot.js';
 
 const router = express.Router();
@@ -205,7 +205,7 @@ router.put('/tickets/:id', async (req, res) => {
 
 /**
  * @swagger
- * /api/tickets/{id}:
+ * /api/tickets/{id}/delete:
  *   delete:
  *     tags:
  *     - tickets
@@ -222,25 +222,60 @@ router.put('/tickets/:id', async (req, res) => {
  *       404:
  *         description: Ticket not found
  */
-router.delete('/tickets/:id', async (req, res) => {
+router.delete('/tickets/:id/delete', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
 
-        const tickets = await loadTickets();
-        const ticketIndex = tickets.findIndex(t => t.id === ticketId);
+        // Assuming you have a function to execute SQL queries
+        const result = await querry('DELETE FROM tickets WHERE id = ?', [ticketId]);
 
-        if (ticketIndex === -1) {
+        if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Ticket not found" });
         }
-
-        // Remove the ticket
-        tickets.splice(ticketIndex, 1);
-        await saveTickets(tickets);
 
         res.status(200).json({ message: "Ticket deleted successfully" });
     } catch (error) {
         console.error("Error deleting ticket:", error);
         res.status(500).json({ error: "Failed to delete ticket" });
+    }
+});
+
+/**
+ * @swagger
+ * /api/tickets/{id}/close:
+ *   post:
+ *     tags:
+ *     - tickets
+ *     description: Close a specific ticket by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Ticket closed successfully
+ *       404:
+ *         description: Ticket not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/tickets/:id/close', async (req, res) => {
+    try {
+        const ticketId = parseInt(req.params.id);
+
+        // Assuming you have a function to execute SQL queries
+        const result = await querry('UPDATE tickets SET status = ? WHERE id = ?', ["0", ticketId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Ticket not found" });
+        }
+
+        res.status(200).json({ message: "Ticket closed successfully" });
+    } catch (error) {
+        console.error("Error closing ticket:", error);
+        res.status(500).json({ error: "Failed to close ticket" });
     }
 });
 

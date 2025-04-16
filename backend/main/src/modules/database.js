@@ -1,6 +1,5 @@
 import fs from "fs";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+import Database from "better-sqlite3";
 
 const config = JSON.parse(fs.readFileSync(new URL("../../config.json", import.meta.url), "utf8"));
 
@@ -8,39 +7,60 @@ export let db;
 
 // Initialize SQLite database if configured
 if (config.storage === "sqlite") {
-    (async () => {
-        db = await open({
-            filename: './tickets.db',
-            driver: sqlite3.Database
-        });
+    db = new Database('./tickets.db');
 
-        await db.exec(`
-            CREATE TABLE IF NOT EXISTS tickets (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                type TEXT,
-                userId TEXT,
-                userTag TEXT,
-                ticketNumber INTEGER,
-                status INTEGER,
-                channelId TEXT,
-                createdAt TEXT,
-                claimedBy TEXT,
-                closedBy TEXT,
-                closingReason TEXT, -- New column for closing reason
-                messages TEXT -- New column to store ticket messages as JSON
-            );
-            CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                username TEXT,
-                discriminator TEXT,
-                role TEXT,
-                token TEXTs
-            )
-        `);
-    })();
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT,
+            userId TEXT,
+            userTag TEXT,
+            ticketNumber INTEGER,
+            status INTEGER,
+            channelId TEXT,
+            createdAt TEXT,
+            claimedBy TEXT,
+            closedBy TEXT,
+            closingReason TEXT, -- New column for closing reason
+            messages TEXT -- New column to store ticket messages as JSON
+        );
+        CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            username TEXT,
+            discriminator TEXT,
+            role TEXT,
+            token TEXT
+        );
+    `);
+
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS tickets_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT,
+            userId TEXT,
+            userTag TEXT,
+            ticketNumber INTEGER,
+            status INTEGER,
+            channelId TEXT UNIQUE, -- Add UNIQUE constraint here
+            createdAt TEXT,
+            claimedBy TEXT,
+            closedBy TEXT,
+            closingReason TEXT,
+            messages TEXT
+        );
+    `);
+
+    db.exec(`
+        INSERT INTO tickets_new (id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages)
+        SELECT id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages
+        FROM tickets;
+    `);
+
+    db.exec(`DROP TABLE tickets;`);
+    db.exec(`ALTER TABLE tickets_new RENAME TO tickets;`);
 }
 
-export const loadTickets = async () => {
+export const loadTickets = () => {
     if (config.storage === "json") {
         try {
             const data = fs.readFileSync('./tickets.json', 'utf8');
@@ -50,7 +70,7 @@ export const loadTickets = async () => {
             return [];
         }
     } else if (config.storage === "sqlite") {
-        const rows = await db.all("SELECT * FROM tickets");
+        const rows = db.prepare("SELECT * FROM tickets").all();
         for (const row of rows) {
             updateTicketStatus(row.id);
         }
@@ -62,7 +82,7 @@ export const loadTickets = async () => {
     }
 };
 
-export const saveTickets = async (tickets) => {
+export const saveTickets = (tickets) => {
     if (config.storage === "json") {
         try {
             fs.writeFileSync('./tickets.json', JSON.stringify(tickets, null, 2));
@@ -70,25 +90,24 @@ export const saveTickets = async (tickets) => {
             console.error('Error saving tickets:', error);
         }
     } else if (config.storage === "sqlite") {
-        const insertOrUpdateStmt = `
+        const insertOrUpdateStmt = db.prepare(`
             INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, messages, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
+            ON CONFLICT(channelId) DO UPDATE SET
                 type = excluded.type,
                 userId = excluded.userId,
                 userTag = excluded.userTag,
                 ticketNumber = excluded.ticketNumber,
-                channelId = excluded.channelId,
                 createdAt = excluded.createdAt,
                 claimedBy = excluded.claimedBy,
                 closedBy = excluded.closedBy,
                 closingReason = excluded.closingReason,
                 messages = excluded.messages,
                 status = excluded.status
-        `;
+        `);
 
         for (const ticket of tickets) {
-            await db.run(insertOrUpdateStmt, [
+            insertOrUpdateStmt.run(
                 ticket.id || null, // Use the ticket ID if it exists, otherwise null for auto-increment
                 ticket.type,
                 ticket.userId,
@@ -101,15 +120,15 @@ export const saveTickets = async (tickets) => {
                 ticket.closingReason,
                 JSON.stringify(ticket.messages || []),
                 ticket.status
-            ]);
+            );
         }
     }
 };
 
 // Function to update the status of a ticket based on the hierarchy
-export const updateTicketStatus = async (ticketId) => {
+export const updateTicketStatus = (ticketId) => {
     if (config.storage === "sqlite") {
-        const ticket = await db.get("SELECT * FROM tickets WHERE id = ?", [ticketId]);
+        const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId);
         
         if (ticket) {
             let status;
@@ -124,23 +143,31 @@ export const updateTicketStatus = async (ticketId) => {
             }
 
             // Update the status in the database
-            await db.run("UPDATE tickets SET status = ? WHERE id = ?", [status, ticketId]);
+            db.prepare("UPDATE tickets SET status = ? WHERE id = ?").run(status, ticketId);
         }
     }
 };
 
 // Function to claim a ticket
-export const claimTicket = async (ticketId, userId) => {
+export const claimTicket = (ticketId, userId) => {
     if (config.storage === "sqlite") {
-        await db.run("UPDATE tickets SET claimedBy = ? WHERE id = ?", [userId, ticketId]);
-        await updateTicketStatus(ticketId); // Update status after claiming
+        db.prepare("UPDATE tickets SET claimedBy = ? WHERE id = ?").run(userId, ticketId);
+        updateTicketStatus(ticketId); // Update status after claiming
     }
 };
 
 // Function to close a ticket
-export const closeTicket = async (ticketId, userId, reason) => {
+export const closeTicket = (ticketId, userId, reason) => {
     if (config.storage === "sqlite") {
-        await db.run("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?", [userId, reason, ticketId]);
-        await updateTicketStatus(ticketId); // Update status after closing
+        db.prepare("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?").run(userId, reason, ticketId);
+        updateTicketStatus(ticketId); // Update status after closing
+    }
+};
+
+export const querry = (query, params) => {
+    if (config.storage === "sqlite") {
+        return db.prepare(query).all(params);
+    } else {
+        throw new Error("Database storage type not supported for this operation.");
     }
 };

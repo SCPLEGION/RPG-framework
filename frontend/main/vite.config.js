@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
+import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,6 +17,9 @@ export default defineConfig({
         })
       ]
     }
+  },
+  resolve: {
+    modules: [path.resolve(__dirname, '../../node_modules'), 'node_modules']
   },
   server: {
     port: 3001,

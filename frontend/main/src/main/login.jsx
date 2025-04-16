@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const login = () => {
-  const [user, setUser] = useState(null);
+  const [User, setUser] = useState(null); // eslint-disable-line
 
-  useEffect(() => {
+  useEffect(() => { // eslint-disable-line
     const params = new URLSearchParams(window.location.search);
     const userId = params.get('userId');
     const username = params.get('username');
@@ -19,10 +19,10 @@ const login = () => {
 
   return (
     <div>
-      {user ? (
+      {User ? (
         <div>
-          <h1>Welcome, {user.username}!</h1>
-          <p>Your User ID: {user.userId}</p>
+          <h1>Welcome, {User.username}!</h1>
+          <p>Your User ID: {User.userId}</p>
         </div>
       ) : (
         <button onClick={handleLogin}>Login with Discord</button>

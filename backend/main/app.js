@@ -4,6 +4,7 @@ import express from 'express';
 import userRoutes from './routes/userRoutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import discordroutes from './routes/discordroutes.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import fs from 'fs';
@@ -36,6 +37,7 @@ console.log(swaggerDocs)
 app.use('/api', userRoutes);
 app.use('/api', ticketRoutes);
 app.use('/auth', authRoutes);
+app.use('/api', discordroutes);
 app.get('/api/swagger.yaml', (req, res) => {
   const swaggerYaml = yaml.dump(swaggerDocs);
   res.type('text/yaml').send(swaggerYaml);

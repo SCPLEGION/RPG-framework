@@ -1,7 +1,7 @@
 // src/routes/userRoutes.js
 
 import express from 'express';
-import {getusers ,createUser, getUser, updateUser, deleteUser } from '../controllers/userController.js';
+import {getUsers ,createUser, getUser, updateUser, deleteUser } from '../controllers/userController.js';
 
 const router = express.Router();
 
@@ -100,7 +100,7 @@ router.get('/users/:id', getUser);
  *                 name: John Doe
  *                 email: johndoe@example.com
  */
-router.get('/users', getusers);
+router.get('/users', getUsers);
 
 /**
  * @swagger

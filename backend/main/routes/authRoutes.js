@@ -46,7 +46,7 @@ router.get('/discord/callback', async (req, res) => {
     const { access_token } = tokenResponse.data;
 
     // Fetch user info
-    const userResponse = await axios.get('https://discord.com/api/users/@me', {
+    const userResponse = await axios.get('https://discord.com/api/v9/users/@me', {
       headers: { Authorization: `Bearer ${access_token}` },
     });
 
@@ -61,7 +61,7 @@ router.get('/discord/callback', async (req, res) => {
     );
 
     // Redirect to frontend with user info
-    res.redirect(`http://localhost:3001/login/callback?userId=${id}&username=${username}`);
+    res.redirect(`http://localhost:3001/login/callback?userId=${id}&username=${username}&token=${token}`);
   } catch (error) {
     console.error('Error during Discord OAuth:', error);
     res.status(500).send('Authentication failed');
