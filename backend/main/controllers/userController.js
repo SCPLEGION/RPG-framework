@@ -1,47 +1,64 @@
+import User from '../models/User.js'; // Import the User model
+
 // src/controllers/userController.js
 
-// Mock data for example purposes
-let users = [
-    { id: 1, name: 'John Doe', email: 'johndoe@example.com' },
-    { id: 2, name: 'Jane Doe', email: 'janedoe@example.com' }
-  ];
-  
-  export const createUser = (req, res) => {
+export const createUser = async (req, res) => {
+  try {
     const { name, email } = req.body;
-    const newUser = { id: users.length + 1, name, email };
-    users.push(newUser);
+    const newUser = new User({ name, email });
+    await newUser.save();
     res.status(201).json(newUser);
-  };
-  
-  export const getUser = (req, res) => {
-    const user = users.find((u) => u.id === parseInt(req.params.id));
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.status(200).json(user);
-  };
-  
-  export const updateUser = (req, res) => {
-    const user = users.find((u) => u.id === parseInt(req.params.id));
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    const { name, email } = req.body;
-    user.name = name || user.name;
-    user.email = email || user.email;
-    res.status(200).json(user);
-  };
-  
-  export const deleteUser = (req, res) => {
-    const userIndex = users.findIndex((u) => u.id === parseInt(req.params.id));
-    if (userIndex === -1) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    users.splice(userIndex, 1);
-    res.status(200).json({ message: 'User deleted successfully' });
-  };
-
-  export const getusers = (req, res) => {
-    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating user', error });
   }
-  
+};
+
+export const getUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user', error });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, email },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating user', error });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting user', error });
+  }
+};
+
+export const getUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error });
+  }
+};

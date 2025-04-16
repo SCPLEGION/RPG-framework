@@ -45,7 +45,7 @@ function Dashboardjsx() {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
 
     if (!isAuthenticated) {
-      console.log('User is not authenticated');
+      console.error('Dash User is not authenticated');
       // Redirect to the login page if not authenticated
       navigate('/login');
     }
@@ -62,10 +62,11 @@ function AuthCallback() {
     const params = new URLSearchParams(window.location.search);
     const userId = params.get('userId');
     const username = params.get('username');
+    const token = params.get('token'); // Get the token from the URL
 
     if (userId && username) {
       // Save user data to localStorage
-      localStorage.setItem('user', JSON.stringify({ userId, username }));
+      localStorage.setItem('user', JSON.stringify({ userId, username,token }));
       localStorage.setItem('isAuthenticated', 'true');
       console.log('User authenticated:', userId, username);
       navigate('/dashboard'); // Redirect to dashboard after successful login

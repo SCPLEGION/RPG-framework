@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import debounce from 'lodash.debounce'; // Install lodash.debounce if not already installed
 import {
     Box,
     Typography,
@@ -50,6 +51,23 @@ const TicketViewer = () => {
     const [sortAsc, setSortAsc] = useState(true);
     const [filterStatus, setFilterStatus] = useState("all");
 
+    // Debounced handler for updating the newMessage state
+    const debouncedSetNewMessage = useCallback( // eslint-disable-line
+        debounce((value) => setNewMessage(value), 300),
+        []
+    );
+
+    const handleInputChange = (e) => {
+        debouncedSetNewMessage(e.target.value);
+    };
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            debouncedSetNewMessage.cancel();
+        };
+    }, [debouncedSetNewMessage]);
+
     useEffect(() => {
         localStorage.setItem('darkMode', JSON.stringify(darkMode));
     }, [darkMode]);
@@ -78,7 +96,23 @@ const TicketViewer = () => {
             const response = await fetch(`/api/tickets/${ticketId}`);
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
             const data = await response.json();
-            setMessages(data.messages || []);
+
+            // Fetch avatars for each message author
+            const messagesWithAvatars = await Promise.all(
+                data.messages.map(async (message) => {
+                    try {
+                        const avatarResponse = await fetch(`/api/user/avatar/${message.authorId}`);
+                        if (!avatarResponse.ok) throw new Error(`Error fetching avatar for user ${message.authorId}`);
+                        const avatarData = await avatarResponse.json();
+                        return { ...message, authorAvatar: avatarData.avatarUrl };
+                    } catch (error) {
+                        console.error(`Failed to fetch avatar for user ${message.authorId}:`, error);
+                        return { ...message, authorAvatar: null }; // Fallback to null if avatar fetch fails
+                    }
+                })
+            );
+
+            setMessages(messagesWithAvatars);
         } catch (error) {
             console.error('Failed to fetch messages:', error);
         }
@@ -211,14 +245,33 @@ const TicketViewer = () => {
                                             Status: {statuses[selectedTicket.status]}
                                         </Typography>
                                     </Box>
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        startIcon={<FaTimesCircle />}
-                                        onClick={handleCloseTicket}
-                                    >
-                                        Close Ticket
-                                    </Button>
+                                    {selectedTicket.status === 0 ? ( // Check if the ticket is closed
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            startIcon={<FaTimesCircle />}
+                                            onClick={async () => {
+                                                try {
+                                                    await fetch(`/api/tickets/${selectedTicket.id}/delete`, { method: 'DELETE' });
+                                                    fetchTickets();
+                                                    setSelectedTicket(null);
+                                                } catch (err) {
+                                                    console.error("Error deleting ticket:", err);
+                                                }
+                                            }}
+                                        >
+                                            Delete Ticket
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            startIcon={<FaTimesCircle />}
+                                            onClick={handleCloseTicket}
+                                        >
+                                            Close Ticket
+                                        </Button>
+                                    )}
                                 </Toolbar>
                             </AppBar>
 
@@ -290,8 +343,8 @@ const TicketViewer = () => {
                                     multiline
                                     fullWidth
                                     minRows={3}
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    value={newMessage} // Use value instead of defaultValue
+                                    onChange={handleInputChange}
                                     variant="outlined"
                                 />
                                 <Button variant="contained" sx={{ mt: 1 }} onClick={handleSendMessage}>
