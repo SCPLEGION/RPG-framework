@@ -51,22 +51,15 @@ const TicketViewer = () => {
     const [sortAsc, setSortAsc] = useState(true);
     const [filterStatus, setFilterStatus] = useState("all");
 
-    // Debounced handler for updating the newMessage state
-    const debouncedSetNewMessage = useCallback( // eslint-disable-line
-        debounce((value) => setNewMessage(value), 300),
-        []
-    );
+    let timer = null; // Initialize timer variable
 
     const handleInputChange = (e) => {
-        debouncedSetNewMessage(e.target.value);
+        timer++
+        if (timer == 10) {
+            setNewMessage(e.target.value); // Directly update the state without debounce\
+            timer = 0; // Reset timer
+        }
     };
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSetNewMessage.cancel();
-        };
-    }, [debouncedSetNewMessage]);
 
     useEffect(() => {
         localStorage.setItem('darkMode', JSON.stringify(darkMode));
@@ -343,7 +336,6 @@ const TicketViewer = () => {
                                     multiline
                                     fullWidth
                                     minRows={3}
-                                    value={newMessage} // Use value instead of defaultValue
                                     onChange={handleInputChange}
                                     variant="outlined"
                                 />
