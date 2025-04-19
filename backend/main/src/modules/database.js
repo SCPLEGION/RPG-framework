@@ -35,7 +35,7 @@ if (config.storage === "sqlite") {
 
     db.exec(`
         CREATE TABLE IF NOT EXISTS tickets_new (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
             type TEXT,
             userId TEXT,
             userTag TEXT,
@@ -51,9 +51,10 @@ if (config.storage === "sqlite") {
     `);
 
     db.exec(`
-        INSERT INTO tickets_new (id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages)
+        INSERT OR IGNORE INTO tickets_new (id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages)
         SELECT id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages
-        FROM tickets;
+        FROM tickets
+        WHERE id IS NOT NULL;
     `);
 
     db.exec(`DROP TABLE tickets;`);
@@ -166,7 +167,7 @@ export const closeTicket = (ticketId, userId, reason) => {
 
 export const querry = (query, params) => {
     if (config.storage === "sqlite") {
-        return db.prepare(query).all(params);
+        return db.prepare(query).run(params);
     } else {
         throw new Error("Database storage type not supported for this operation.");
     }

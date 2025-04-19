@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import dotenv from 'dotenv';
 import { redirect, handleInteraction } from './modules/redirector.js';
-import { db } from './modules/database.js';
+import { querry } from './modules/database.js';
 
 dotenv.config();
 
@@ -28,11 +28,11 @@ client.once('ready', async () => {
     });
 });
 
-async function savetodb(x){
+async function savetodb(x) {
     const { id, username, discriminator } = x;
-    await db.run(
-        `INSERT INTO users (id, username, discriminator, role, token) VALUES (?, ?, ?, ? ,?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
-        [id, username, discriminator, 'user', 0 , username, discriminator]
+    await querry(
+        `INSERT INTO users (id, username, discriminator, role, token) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
+        [id, username, discriminator, 'user', 0, username, discriminator]
     );
 }
 
