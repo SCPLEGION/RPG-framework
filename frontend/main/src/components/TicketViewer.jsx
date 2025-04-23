@@ -54,11 +54,7 @@ const TicketViewer = () => {
     let timer = null; // Initialize timer variable
 
     const handleInputChange = (e) => {
-        timer++
-        if (timer == 10) {
-            setNewMessage(e.target.value); // Directly update the state without debounce\
-            timer = 0; // Reset timer
-        }
+        setNewMessage(e.target.value); // Directly update the state without debounce\
     };
 
     useEffect(() => {
@@ -336,6 +332,7 @@ const TicketViewer = () => {
                                     multiline
                                     fullWidth
                                     minRows={3}
+                                    value={newMessage}
                                     onChange={handleInputChange}
                                     variant="outlined"
                                 />
