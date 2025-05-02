@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const AboutPage = () => {
-    const [theme, setTheme] = useState('light'); // 'light', 'dark', or 'amoled'
+    const [theme, setTheme] = useState('dark'); // 'light', 'dark', or 'amoled'
 
     const toggleTheme = () => {
         setTheme((prevTheme) => 
