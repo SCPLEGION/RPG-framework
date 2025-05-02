@@ -31,7 +31,7 @@ import { FaTicketAlt, FaSync, FaTimesCircle, FaMoon, FaSun, FaSortAmountDown, Fa
 
 const getInitialDarkMode = () => {
     const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : false;
+    return saved ? JSON.parse(saved) : true;
 };
 
 const statuses = {

@@ -1,7 +1,7 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { db } from '../src/modules/database.js';
+import { db, querry } from '../src/modules/database.js';
 import sha256 from 'crypto-js/sha256.js';
 
 dotenv.config();
@@ -55,7 +55,7 @@ router.get('/discord/callback', async (req, res) => {
     let token = encrypt(id, username);
 
     // Save user info to the database
-    await db.run(
+    await querry(
       `INSERT INTO users (id, username, discriminator, role, token) VALUES (?, ?, ?, ?,?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
       [id, username, discriminator, 'user',token , username, discriminator]
     );
