@@ -40,6 +40,7 @@ export async function handleInteraction(interaction) {
                 .setRequired(true);
 
             const actionRow = new ActionRowBuilder().addComponents(reasonInput);
+            // @ts-ignore
             modal.addComponents(actionRow);
 
             await interaction.showModal(modal);

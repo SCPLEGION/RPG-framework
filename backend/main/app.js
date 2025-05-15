@@ -26,6 +26,7 @@ const swaggerOptions = {
     },
   },
   apis: ['./routes/*.js'], // Pointing to the route files for Swagger
+  components: ['./components/*.js'], // Pointing to the components files for Swagger
 };
 
 const swaggerDocs = swaggerJsdoc(swaggerOptions);

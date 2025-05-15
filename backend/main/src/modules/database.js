@@ -1,6 +1,11 @@
+/**
+ * @module Database
+ */
+
 import fs from "fs";
 import Database from "better-sqlite3";
 
+// @ts-ignore
 const config = JSON.parse(fs.readFileSync(new URL("../../config.json", import.meta.url), "utf8"));
 
 export let db;
@@ -61,6 +66,10 @@ if (config.storage === "sqlite") {
     db.exec(`ALTER TABLE tickets_new RENAME TO tickets;`);
 }
 
+/**
+ * Loads tickets from the database or JSON file based on the storage configuration.
+ * @returns {Array<Object>} An array of ticket objects.
+ */
 export const loadTickets = () => {
     if (config.storage === "json") {
         try {
@@ -78,11 +87,15 @@ export const loadTickets = () => {
         return rows.map(row => ({
             ...row,
             messages: JSON.parse(row.messages || "[]"),
-            closingReason: row.closingReason || null // Include closing reason
+            closingReason: row.closingReason || null
         }));
     }
 };
 
+/**
+ * Saves tickets to the database or JSON file based on the storage configuration.
+ * @param {Array<Object>} tickets - An array of ticket objects to save.
+ */
 export const saveTickets = (tickets) => {
     if (config.storage === "json") {
         try {
@@ -109,7 +122,7 @@ export const saveTickets = (tickets) => {
 
         for (const ticket of tickets) {
             insertOrUpdateStmt.run(
-                ticket.id || null, // Use the ticket ID if it exists, otherwise null for auto-increment
+                ticket.id || null,
                 ticket.type,
                 ticket.userId,
                 ticket.userTag,
@@ -126,7 +139,10 @@ export const saveTickets = (tickets) => {
     }
 };
 
-// Function to update the status of a ticket based on the hierarchy
+/**
+ * Updates the status of a ticket based on its current state.
+ * @param {number} ticketId - The ID of the ticket to update.
+ */
 export const updateTicketStatus = (ticketId) => {
     if (config.storage === "sqlite") {
         const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId);
@@ -134,7 +150,6 @@ export const updateTicketStatus = (ticketId) => {
         if (ticket) {
             let status;
 
-            // Check if the ticket is closed
             if (ticket.closedBy !== null) {
                 status = 0; // closed
             } else if (ticket.claimedBy !== null) {
@@ -143,28 +158,43 @@ export const updateTicketStatus = (ticketId) => {
                 status = 2; // unclaimed
             }
 
-            // Update the status in the database
             db.prepare("UPDATE tickets SET status = ? WHERE id = ?").run(status, ticketId);
         }
     }
 };
 
-// Function to claim a ticket
+/**
+ * Claims a ticket by assigning it to a user.
+ * @param {number} ticketId - The ID of the ticket to claim.
+ * @param {string} userId - The ID of the user claiming the ticket.
+ */
 export const claimTicket = (ticketId, userId) => {
     if (config.storage === "sqlite") {
         db.prepare("UPDATE tickets SET claimedBy = ? WHERE id = ?").run(userId, ticketId);
-        updateTicketStatus(ticketId); // Update status after claiming
+        updateTicketStatus(ticketId);
     }
 };
 
-// Function to close a ticket
+/**
+ * Closes a ticket with a specified reason.
+ * @param {number} ticketId - The ID of the ticket to close.
+ * @param {string} userId - The ID of the user closing the ticket.
+ * @param {string} reason - The reason for closing the ticket.
+ */
 export const closeTicket = (ticketId, userId, reason) => {
     if (config.storage === "sqlite") {
         db.prepare("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?").run(userId, reason, ticketId);
-        updateTicketStatus(ticketId); // Update status after closing
+        updateTicketStatus(ticketId);
     }
 };
 
+/**
+ * Executes a custom SQL query on the database.
+ * @param {string} query - The SQL query to execute.
+ * @param {Array<any>} params - The parameters for the SQL query.
+ * @returns {Object} The result of the query execution.
+ * @throws {Error} If the storage type is not supported.
+ */
 export const querry = (query, params) => {
     if (config.storage === "sqlite") {
         return db.prepare(query).run(params);
