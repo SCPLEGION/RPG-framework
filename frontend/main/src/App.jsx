@@ -1,10 +1,13 @@
-import TicketViewer from './components/TicketViewer.jsx';
+import TicketViewer from './main/TicketViewer.jsx';
 import AboutPage from './main/index.jsx';
 import login from './main/login.jsx';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import Dashboard from './components/dashboard.jsx';
-import Docs from './components/docs.jsx';
+import Dashboard from './main/dashboard.jsx';
+import Docs from './main/docs.jsx';
+import BJ from './main/casino/games/BJ.jsx';
+import Gameselector from './main/casino/mainsite.jsx'
+import Roulette from './main/casino/games/Roullet.jsx';
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
       <Route path="/dashboard" element={<Dashboardjsx />} />
       <Route path="/login/callback" element={<AuthCallback />} />
       <Route path="/docs" element={<Docs />} />
+      <Route path="/casino" element={<Gameselector />} />
+      <Route path="/casino/blackjack" element={<BJ />} />
+      <Route path="/casino/roulette" element={<Roulette />} />
       {/* Add more routes as needed */}
     </Routes>
   );

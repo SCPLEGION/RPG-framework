@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import debounce from 'lodash.debounce'; // Install lodash.debounce if not already installed
+import debounce from 'lodash.debounce';
 import {
     Box,
     Typography,
@@ -24,10 +24,11 @@ import {
     Select,
     MenuItem,
     Avatar,
+    Drawer,
 } from '@mui/material';
 
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { FaTicketAlt, FaSync, FaTimesCircle, FaMoon, FaSun, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
+import { FaTicketAlt, FaSync, FaTimesCircle, FaMoon, FaSun, FaSortAmountDown, FaSortAmountUp, FaBars } from 'react-icons/fa';
 
 const getInitialDarkMode = () => {
     const saved = localStorage.getItem('darkMode');
@@ -36,10 +37,9 @@ const getInitialDarkMode = () => {
 
 const statuses = {
     0: 'Closed',
-    1: `Claimed`,
+    1: 'Claimed',
     2: 'Unclaimed',
 };
-
 
 const TicketViewer = () => {
     const [selectedTicket, setSelectedTicket] = useState(null);
@@ -47,14 +47,24 @@ const TicketViewer = () => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [darkMode, setDarkMode] = useState(getInitialDarkMode);
-    const [newMessage, setNewMessage] = useState("");
+    const [newMessage, setNewMessage] = useState('');
     const [sortAsc, setSortAsc] = useState(true);
-    const [filterStatus, setFilterStatus] = useState("all");
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [drawerOpen, setDrawerOpen] = useState(true);
 
-    let timer = null; // Initialize timer variable
+    // Debounced input handler to reduce lag
+    const debouncedProcessMessage = useCallback(
+        debounce((value) => {
+            // Add any processing logic here if needed
+            console.log("Processed message:", value);
+        }, 300),
+        []
+    );
 
     const handleInputChange = (e) => {
-        setNewMessage(e.target.value); // Directly update the state without debounce\
+        const value = e.target.value;
+        setNewMessage(value); // Update state immediately
+        debouncedProcessMessage(value); // Debounce any additional processing
     };
 
     useEffect(() => {
@@ -86,7 +96,6 @@ const TicketViewer = () => {
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
             const data = await response.json();
 
-            // Fetch avatars for each message author
             const messagesWithAvatars = await Promise.all(
                 data.messages.map(async (message) => {
                     try {
@@ -96,7 +105,7 @@ const TicketViewer = () => {
                         return { ...message, authorAvatar: avatarData.avatarUrl };
                     } catch (error) {
                         console.error(`Failed to fetch avatar for user ${message.authorId}:`, error);
-                        return { ...message, authorAvatar: null }; // Fallback to null if avatar fetch fails
+                        return { ...message, authorAvatar: null };
                     }
                 })
             );
@@ -115,10 +124,10 @@ const TicketViewer = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reply: newMessage }),
             });
-            setNewMessage("");
+            setNewMessage('');
             fetchMessages(selectedTicket.id);
         } catch (err) {
-            console.error("Failed to send message:", err);
+            console.error('Failed to send message:', err);
         }
     };
 
@@ -128,7 +137,7 @@ const TicketViewer = () => {
             fetchTickets();
             setSelectedTicket(null);
         } catch (err) {
-            console.error("Error closing ticket:", err);
+            console.error('Error closing ticket:', err);
         }
     };
 
@@ -136,8 +145,8 @@ const TicketViewer = () => {
         fetchTickets();
     }, []);
 
-    const filteredTickets = ticketData.filter(ticket =>
-        filterStatus === "all" || ticket.status === filterStatus
+    const filteredTickets = ticketData.filter((ticket) =>
+        filterStatus === 'all' || ticket.status === filterStatus
     );
 
     const sortedMessages = [...messages].sort((a, b) =>
@@ -149,79 +158,122 @@ const TicketViewer = () => {
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Box display="flex" height="100vh">
-                {/* Sidebar */}
-                <Box width="25%" p={2} sx={{ bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider' }} overflow="auto">
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6">Tickets</Typography>
-                        <Stack direction="row" spacing={1}>
-                            <IconButton onClick={() => setDarkMode(!darkMode)}>
-                                {darkMode ? <FaSun /> : <FaMoon />}
-                            </IconButton>
-                            <IconButton
-                                onClick={() => {
-                                    fetchTickets();
-                                    setSelectedTicket(null);
-                                    setMessages([]);
-                                }}
-                            >
-                                <FaSync />
-                            </IconButton>
+            <Box display="flex" height="100vh" overflow="hidden">
+                {/* Collapsible Sidebar */}
+                <Drawer
+                    variant="persistent"
+                    open={drawerOpen}
+                    sx={{
+                        width: drawerOpen ? '20%' : '0%',
+                        flexShrink: 0,
+                        '& .MuiDrawer-paper': {
+                            width: '20%',
+                            boxSizing: 'border-box',
+                        },
+                    }}
+                >
+                    <Box
+                        p={2}
+                        sx={{ bgcolor: 'background.paper', borderRight: 1, borderColor: 'divider' }}
+                        overflow="auto"
+                    >
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                            <Typography variant="h6">Tickets</Typography>
+                            <Stack direction="row" spacing={1}>
+                                <IconButton onClick={() => setDarkMode(!darkMode)}>
+                                    {darkMode ? <FaSun /> : <FaMoon />}
+                                </IconButton>
+                                <IconButton
+                                    onClick={() => {
+                                        fetchTickets();
+                                        setSelectedTicket(null);
+                                        setMessages([]);
+                                    }}
+                                >
+                                    <FaSync />
+                                </IconButton>
+                            </Stack>
                         </Stack>
-                    </Stack>
 
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                            value={filterStatus}
-                            label="Status"
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                        >
-                            <MenuItem value="all">All</MenuItem>
-                            <MenuItem value="open">Open</MenuItem>
-                            <MenuItem value="closed">Closed</MenuItem>
-                        </Select>
-                    </FormControl>
+                        <FormControl fullWidth sx={{ mb: 2 }}>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={filterStatus}
+                                label="Status"
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                            >
+                                <MenuItem value="all">All</MenuItem>
+                                <MenuItem value="open">Open</MenuItem>
+                                <MenuItem value="closed">Closed</MenuItem>
+                            </Select>
+                        </FormControl>
 
-                    {loading ? (
-                        <CircularProgress />
-                    ) : (
-                        <List>
-                            {filteredTickets.length > 0 ? (
-                                filteredTickets.map((ticket) => (
-                                    <ListItem
-                                        key={ticket.id}
-                                        button
-                                        onClick={() => {
-                                            setSelectedTicket(ticket);
-                                            fetchMessages(ticket.id);
-                                        }}
-                                        sx={{
-                                            borderRadius: 2,
-                                            mb: 1,
-                                            bgcolor: selectedTicket?.id === ticket.id ? 'primary.dark' : 'transparent',
-                                            boxShadow: selectedTicket?.id === ticket.id ? 1 : 0,
-                                            '&:hover': {
-                                                bgcolor: 'action.hover',
-                                            },
-                                        }}
-                                    >
-                                        <ListItemIcon><FaTicketAlt /></ListItemIcon>
-                                        <ListItemText
-                                            primary={`#${ticket.ticketNumber} - ${ticket.type}`}
-                                            secondary={`Status: ${statuses[ticket.status]}`}
-                                        />
-                                    </ListItem>
-                                ))
-                            ) : (
-                                <Typography>No tickets available</Typography>
-                            )}
-                        </List>
-                    )}
-                </Box>
+                        {loading ? (
+                            <CircularProgress />
+                        ) : (
+                            <List>
+                                {filteredTickets.length > 0 ? (
+                                    filteredTickets.map((ticket) => (
+                                        <ListItem
+                                            key={ticket.id}
+                                            button
+                                            onClick={() => {
+                                                setSelectedTicket(ticket);
+                                                fetchMessages(ticket.id);
+                                            }}
+                                            sx={{
+                                                borderRadius: 2,
+                                                mb: 1,
+                                                bgcolor:
+                                                    selectedTicket?.id === ticket.id
+                                                        ? 'primary.dark'
+                                                        : 'transparent',
+                                                boxShadow: selectedTicket?.id === ticket.id ? 1 : 0,
+                                                '&:hover': {
+                                                    bgcolor: 'action.hover',
+                                                },
+                                            }}
+                                        >
+                                            <ListItemIcon>
+                                                <FaTicketAlt />
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={`#${ticket.ticketNumber} - ${ticket.type}`}
+                                                secondary={`Status: ${statuses[ticket.status]}`}
+                                            />
+                                        </ListItem>
+                                    ))
+                                ) : (
+                                    <Typography>No tickets available</Typography>
+                                )}
+                            </List>
+                        )}
+                    </Box>
+                </Drawer>
 
                 {/* Content Area */}
-                <Box width="75%" p={3} overflow="auto">
+                <Box
+                    component="main"
+                    sx={{
+                        flexGrow: 1,
+                        p: drawerOpen ? '0%' : '2%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'padding 0.3s',
+                        overflow: 'auto',
+                    }}
+                >
+                    {/* Toggle Button for Sidebar */}
+                    <IconButton
+                        onClick={() => setDrawerOpen(!drawerOpen)}
+                        sx={{
+                            alignSelf: 'flex-start',
+                            marginBottom: '1rem',
+                        }}
+                    >
+                        <FaBars />
+                    </IconButton>
+
                     {selectedTicket ? (
                         <>
                             <AppBar position="static" color="default" elevation={1} sx={{ mb: 2 }}>
@@ -234,18 +286,20 @@ const TicketViewer = () => {
                                             Status: {statuses[selectedTicket.status]}
                                         </Typography>
                                     </Box>
-                                    {selectedTicket.status === 0 ? ( // Check if the ticket is closed
+                                    {selectedTicket.status === 0 ? (
                                         <Button
                                             variant="outlined"
                                             color="error"
                                             startIcon={<FaTimesCircle />}
                                             onClick={async () => {
                                                 try {
-                                                    await fetch(`/api/tickets/${selectedTicket.id}/delete`, { method: 'DELETE' });
+                                                    await fetch(`/api/tickets/${selectedTicket.id}/delete`, {
+                                                        method: 'DELETE',
+                                                    });
                                                     fetchTickets();
                                                     setSelectedTicket(null);
                                                 } catch (err) {
-                                                    console.error("Error deleting ticket:", err);
+                                                    console.error('Error deleting ticket:', err);
                                                 }
                                             }}
                                         >
@@ -270,15 +324,15 @@ const TicketViewer = () => {
                                     onClick={() => setSortAsc(!sortAsc)}
                                     startIcon={sortAsc ? <FaSortAmountUp /> : <FaSortAmountDown />}
                                 >
-                                    Sort: {sortAsc ? "Oldest First" : "Newest First"}
+                                    Sort: {sortAsc ? 'Oldest First' : 'Newest First'}
                                 </Button>
                             </Stack>
 
                             <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
                                 {sortedMessages.length > 0 ? (
                                     sortedMessages.map((message) => {
-                                        const isImage = /\.(gif|jpe?g|png|webp)$/i.test(message.content); // Check if the message is an image URL
-                                        const isLink = /^https?:\/\/[^\s]+$/.test(message.content); // Check if the message is a URL
+                                        const isImage = /\.(gif|jpe?g|png|webp)$/i.test(message.content);
+                                        const isLink = /^https?:\/\/[^\s]+$/.test(message.content);
 
                                         return (
                                             <Card key={message.id} variant="outlined" sx={{ mb: 2 }}>
@@ -299,11 +353,10 @@ const TicketViewer = () => {
                                                         </Box>
                                                     ) : isLink ? (
                                                         <Typography variant="body1" sx={{ mt: 1 }}>
-                                                            <a 
-                                                                href={message.content} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer" 
-                                                                role="img"
+                                                            <a
+                                                                href={message.content}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
                                                                 style={{ color: 'inherit', textDecoration: 'underline' }}
                                                             >
                                                                 {message.content}

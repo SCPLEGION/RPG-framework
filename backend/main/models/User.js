@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    money: {
+        type: Number,
+        default: 1000,
+    },
     stats: {
         health: {
             type: Number,
