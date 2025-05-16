@@ -36,6 +36,16 @@ import { querry } from './modules/database.js';
  */
 
 /**
+ * Replying to message
+ * @async
+ * @function reply
+ * @param {string} to - message to reply
+ * @param {string} msg - text of reply
+ * @returns {promise<string|null>}
+ */
+
+
+/**
  * Placeholder function for performing an action.
  * @async
  * @function action
@@ -133,6 +143,16 @@ export async function fetchavatar(userId) {
         console.error("Error fetching avatar:", error);
         return null;
     }
+}
+
+export async function reply(to,msg) {
+	try {
+		to.reply(msg)
+		return true
+	} catch (error) {
+		console.error("Error replying: " + error)
+		return null
+	}
 }
 
 export async function action(x,y){
