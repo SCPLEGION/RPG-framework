@@ -26,6 +26,7 @@ if (config.storage === "sqlite") {
             createdAt TEXT,
             claimedBy TEXT,
             closedBy TEXT,
+            users TEXT,
             closingReason TEXT, -- New column for closing reason
             messages TEXT -- New column to store ticket messages as JSON
         );
@@ -50,14 +51,15 @@ if (config.storage === "sqlite") {
             createdAt TEXT,
             claimedBy TEXT,
             closedBy TEXT,
+            users TEXT,
             closingReason TEXT,
             messages TEXT
         );
     `);
 
     db.exec(`
-        INSERT OR IGNORE INTO tickets_new (id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages)
-        SELECT id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, messages
+        INSERT OR IGNORE INTO tickets_new (id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages)
+        SELECT id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason,users , messages
         FROM tickets
         WHERE id IS NOT NULL;
     `);
@@ -104,9 +106,20 @@ export const saveTickets = (tickets) => {
             console.error('Error saving tickets:', error);
         }
     } else if (config.storage === "sqlite") {
+        const usersSet = new Set();
+        for (const ticket of tickets) {
+            if (Array.isArray(ticket.messages)) {
+                ticket.messages.forEach(msg => {
+                    if (msg.authorId) usersSet.add(msg.authorId);
+                });
+            }
+            ticket.users = JSON.stringify(Array.from(usersSet));
+            usersSet.clear();
+        }
+
         const insertOrUpdateStmt = db.prepare(`
-            INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, messages, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(channelId) DO UPDATE SET
                 type = excluded.type,
                 userId = excluded.userId,
@@ -116,6 +129,7 @@ export const saveTickets = (tickets) => {
                 claimedBy = excluded.claimedBy,
                 closedBy = excluded.closedBy,
                 closingReason = excluded.closingReason,
+                users = excluded.users,
                 messages = excluded.messages,
                 status = excluded.status
         `);
@@ -132,6 +146,7 @@ export const saveTickets = (tickets) => {
                 ticket.claimedBy,
                 ticket.closedBy,
                 ticket.closingReason,
+                ticket.users,
                 JSON.stringify(ticket.messages || []),
                 ticket.status
             );
