@@ -8,6 +8,7 @@ const ticketCounters = {
 };
 
 export async function createTicket(msg, type) {
+    const errors = [];
     const tickets = await loadTickets();
 
     // Enforce the 100-ticket limit
@@ -15,7 +16,13 @@ export async function createTicket(msg, type) {
         const oldestTicket = tickets.shift(); // Remove the oldest ticket
         const channel = msg.guild.channels.cache.get(oldestTicket.channelId);
         if (channel) {
-            channel.delete().catch(console.error);
+            try {
+                await channel.delete();
+            } catch (err) {
+                errors.push(`Failed to delete oldest ticket channel: ${err.message}`);
+            }
+        } else {
+            errors.push("Oldest ticket channel not found.");
         }
     }
 
@@ -42,20 +49,33 @@ export async function createTicket(msg, type) {
                 .setStyle(ButtonStyle.Danger)
         );
 
-    msg.guild.channels.create({
-        name: `ticket-${type.toLowerCase()}-${ticketCounters[type]}`,
-        type: 0, // 0 = Text channel
-        permissionOverwrites: [
-            {
-                id: msg.guild.id,
-                deny: ['ViewChannel'],
-            },
-            {
-                id: msg.author.id,
-                allow: ['ViewChannel'],
-            },
-        ],
-    }).then(async channel => {
+    try {
+        const channel = await msg.guild.channels.create({
+            name: `ticket-${type.toLowerCase()}-${ticketCounters[type]}`,
+            type: 0, // 0 = Text channel
+            permissionOverwrites: [
+                {
+                    id: msg.guild.id,
+                    deny: ['ViewChannel'],
+                },
+                {
+                    id: msg.author.id,
+                    allow: [
+                        'ViewChannel',
+                        'SendMessages',
+                        'ReadMessageHistory',
+                        'AttachFiles',
+                        'EmbedLinks',
+                        'AddReactions',
+                        'UseExternalEmojis',
+                        'UseExternalStickers',
+                        'MentionEveryone',
+                        'SendTTSMessages'
+                    ],
+                },
+            ],
+        });
+
         const ticket = {
             type,
             userId: msg.author.id,
@@ -65,14 +85,28 @@ export async function createTicket(msg, type) {
             createdAt: new Date().toISOString(),
             claimedBy: null,
             closedBy: null,
+            users: null,
             messages: [] // Initialize messages array
         };
 
         tickets.push(ticket);
-        await saveTickets(tickets);
+        try {
+            await saveTickets(tickets);
+        } catch (err) {
+            errors.push(`Failed to save tickets: ${err.message}`);
+        }
 
-        channel.send({ embeds: [embed], components: [actionRow] });
-        msg.delete();
+        try {
+            await channel.send({ embeds: [embed], components: [actionRow] });
+        } catch (err) {
+            errors.push(`Failed to send embed to channel: ${err.message}`);
+        }
+
+        try {
+            await msg.delete();
+        } catch (err) {
+            errors.push(`Failed to delete original message: ${err.message}`);
+        }
 
         // Listen for messages in the ticket channel
         const collector = channel.createMessageCollector();
@@ -84,11 +118,24 @@ export async function createTicket(msg, type) {
                     content: message.content,
                     timestamp: message.createdAt.toISOString()
                 });
-                await saveTickets(tickets);
+                try {
+                    await saveTickets(tickets);
+                } catch (err) {
+                    errors.push(`Failed to save ticket message: ${err.message}`);
+                }
             }
         });
-    }).catch(error => {
-        console.error('Error creating ticket channel:', error);
-        msg.reply('There was an error creating the ticket. Please try again later.');
-    });
+    } catch (error) {
+        errors.push(`Error creating ticket channel: ${error.message}`);
+    }
+
+    // Send error summary if any errors occurred
+    if (errors.length > 0) {
+        try {
+            await msg.author.send(`Errors occurred during ticket creation:\n${errors.join('\n')}`);
+            console.log('Error summary sent to user:', errors);
+        } catch (err) {
+            console.log('Failed to send error summary to user:', err);
+        }
+    }
 }
