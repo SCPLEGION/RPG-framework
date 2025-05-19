@@ -33,6 +33,7 @@ router.get('/discord/callback', async (req, res) => {
     // Exchange code for access token
     const tokenResponse = await axios.post(
       'https://discord.com/api/oauth2/token',
+      // @ts-ignore
       new URLSearchParams({
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
@@ -61,7 +62,7 @@ router.get('/discord/callback', async (req, res) => {
     );
 
     // Redirect to frontend with user info
-    res.redirect(`http://localhost:3001/login/callback?userId=${id}&username=${username}&token=${token}`);
+    res.redirect(`http://localhost:3001/login?userId=${id}&username=${username}&token=${token}`);
   } catch (error) {
     console.error('Error during Discord OAuth:', error);
     res.status(500).send('Authentication failed');
