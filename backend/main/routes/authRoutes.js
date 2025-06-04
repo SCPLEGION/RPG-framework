@@ -51,18 +51,30 @@ router.get('/discord/callback', async (req, res) => {
       headers: { Authorization: `Bearer ${access_token}` },
     });
 
-    const { id, username, discriminator } = userResponse.data;
+    const { id, username, discriminator, avatar } = userResponse.data;
 
     let token = encrypt(id, username);
+
+    // Construct avatar URL
+    let avatarUrl = avatar
+      ? `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`
+      : null;
 
     // Save user info to the database
     await querry(
       `INSERT INTO users (id, username, discriminator, role, token) VALUES (?, ?, ?, ?,?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
-      [id, username, discriminator, 'user',token , username, discriminator]
+      [id, username, discriminator, 'user', token, username, discriminator]
     );
 
-    // Redirect to frontend with user info
-    res.redirect(`http://localhost:3001/login?userId=${id}&username=${username}&token=${token}`);
+    // Redirect to frontend with user info and avatar
+    const params = new URLSearchParams({
+      userId: id,
+      username,
+      token,
+      avatar: avatarUrl || ''
+    }).toString();
+
+    res.redirect(`http://localhost:3001/login/callback?${params}`);
   } catch (error) {
     console.error('Error during Discord OAuth:', error);
     res.status(500).send('Authentication failed');

@@ -59,7 +59,7 @@ if (config.storage === "sqlite") {
 
     db.exec(`
         INSERT OR IGNORE INTO tickets_new (id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages)
-        SELECT id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason,users , messages
+        SELECT id, type, userId, userTag, ticketNumber, status, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages
         FROM tickets
         WHERE id IS NOT NULL;
     `);

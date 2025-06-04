@@ -69,13 +69,16 @@ function AuthCallback() {
     const userId = params.get('userId');
     const username = params.get('username');
     const token = params.get('token'); // Get the token from the URL
+    const avatar = params.get('avatar'); // Get the token from the URL
 
     if (userId && username) {
       // Save user data to localStorage
-      localStorage.setItem('user', JSON.stringify({ userId, username,token }));
+      localStorage.setItem('user', JSON.stringify({ userId, username, token,  avatar}));
       localStorage.setItem('isAuthenticated', 'true');
       console.log('User authenticated:', userId, username);
-      navigate('/dashboard'); // Redirect to dashboard after successful login
+      
+      // Pass params to dashboard route
+      navigate(`/login?userId=${encodeURIComponent(userId)}&username=${encodeURIComponent(username)}&token=${encodeURIComponent(token)}&avatar=${encodeURIComponent(avatar)}`);
     } else {
       console.log('1Authentication failed or user data missing');
       navigate('/login'); // Redirect to login if authentication fails
