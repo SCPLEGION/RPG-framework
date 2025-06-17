@@ -33,6 +33,7 @@ if (config.storage === "sqlite") {
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             username TEXT,
+            displayName TEXT,
             discriminator TEXT,
             role TEXT,
             token TEXT

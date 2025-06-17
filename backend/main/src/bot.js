@@ -102,12 +102,13 @@ client.once('ready', async () => {
 });
 
 async function savetodb(x) {
-    const { id, username, discriminator } = x;
+    const { id, username, discriminator, displayName } = x;
     await querry(
-        `INSERT INTO users (id, username, discriminator, role, token) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET username = ?, discriminator = ?`,
-        [id, username, discriminator, 'user', 0, username, discriminator]
+        `INSERT INTO users (id, username,displayName , discriminator, role, token) VALUES (? ,? , ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET username = ?,displayName = ?, discriminator = ?`,
+        [id, username,displayName, discriminator, 'user', 0, username, displayName, discriminator]
     );
 }
+
 
 
 client.on('messageCreate', (message) => {

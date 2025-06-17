@@ -6,9 +6,8 @@ import ticketRoutes from './routes/ticketRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import discordroutes from './routes/discordroutes.js';
 import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
-import fs from 'fs';
 import yaml from 'js-yaml';
+import { authenticateJWT } from './middleware/auth.js';
 
 const app = express();
 
@@ -35,10 +34,13 @@ const swaggerDocs = swaggerJsdoc(swaggerOptions);
 console.log(swaggerDocs)
 
 // Use routes
-app.use('/api', userRoutes);
-app.use('/api', ticketRoutes);
+app.use('/api', authenticateJWT, userRoutes);
+app.use('/api', authenticateJWT, ticketRoutes);
 app.use('/auth', authRoutes);
 app.use('/api', discordroutes);
+app.get('/api/me', authenticateJWT, (req, res) => {
+  res.json({ user: req.user });
+});
 app.get('/api/swagger.yaml', (req, res) => {
   const swaggerYaml = yaml.dump(swaggerDocs);
   res.type('text/yaml').send(swaggerYaml);

@@ -80,7 +80,11 @@ const TicketViewer = () => {
     const fetchTickets = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/tickets');
+            const response = await fetch('/api/tickets',{
+                headers: {
+                    Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token
+                }
+            });
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
             const data = await response.json();
             setTicketData(data);
