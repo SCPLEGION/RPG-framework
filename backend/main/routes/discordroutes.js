@@ -18,6 +18,17 @@ router.get('/user-count', (req, res) => {
 
 /**
  * @swagger
+ *  components:
+ *    schemas:
+ *      AvatarUrl:
+ *        type: string
+ *        format: uri
+ *        description: URL of the user's avatar image.
+ *
+ * @typedef {string} AvatarUrl - URL of the user's avatar image.
+ */
+/**
+ * @swagger
  * /api/user/avatar/{userid}:
  *   get:
  *     description: Get the avatar URL of a user by their ID

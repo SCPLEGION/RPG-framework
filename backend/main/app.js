@@ -28,22 +28,21 @@ const swaggerOptions = {
   components: ['./components/*.js'], // Pointing to the components files for Swagger
 };
 
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
+// Serve /api/swagger.yaml WITHOUT authentication
+app.get('/api/swagger.yaml', (req, res) => {
+  const swaggerDocs = swaggerJsdoc(swaggerOptions);
+  const swaggerYaml = yaml.dump(swaggerDocs);
+  res.type('text/yaml').send(swaggerYaml);
+});
 
-// Serve Swagger UI
-console.log(swaggerDocs)
-
-// Use routes
+// Use routes (these are protected)
 app.use('/api', authenticateJWT, userRoutes);
 app.use('/api', authenticateJWT, ticketRoutes);
 app.use('/auth', authRoutes);
 app.use('/api', discordroutes);
 app.get('/api/me', authenticateJWT, (req, res) => {
+  // @ts-ignore
   res.json({ user: req.user });
-});
-app.get('/api/swagger.yaml', (req, res) => {
-  const swaggerYaml = yaml.dump(swaggerDocs);
-  res.type('text/yaml').send(swaggerYaml);
 });
 
 
