@@ -1,8 +1,10 @@
 import express from 'express';
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { db, querry } from '../src/modules/database.js';
-import sha256 from 'crypto-js/sha256.js';
+import {
+  db,
+  querry
+} from '../utils/database.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
@@ -30,15 +32,27 @@ function encrypt(userId, username) {
 
 // Step 1: Redirect to Discord OAuth
 router.get('/discord', (req, res) => {
+  const state = crypto.randomBytes(16).toString('hex');
+  res.cookie('oauth_state', state, {
+    httpOnly: true,
+    secure: true
+  });
+
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(
     REDIRECT_URI
-  )}&response_type=code&scope=identify`;
+  )}&response_type=code&scope=identify&state=${state}`;
   res.redirect(discordAuthUrl);
 });
 
 // Step 2: Handle OAuth Callback
 router.get('/discord/callback', async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
+  const cookieState = req.cookies.oauth_state;
+
+  if (!state || !cookieState || state !== cookieState) {
+    res.status(403).send('Invalid state parameter');
+    return;
+  }
 
   try {
     // Exchange code for access token
@@ -51,18 +65,30 @@ router.get('/discord/callback', async (req, res) => {
         grant_type: 'authorization_code',
         code,
         redirect_uri: REDIRECT_URI,
-      }),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      }), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
     );
 
-    const { access_token } = tokenResponse.data;
+    const {
+      access_token
+    } = tokenResponse.data;
 
     // Fetch user info
     const userResponse = await axios.get('https://discord.com/api/v9/users/@me', {
-      headers: { Authorization: `Bearer ${access_token}` },
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      },
     });
 
-    const { id, username, discriminator, avatar } = userResponse.data;
+    const {
+      id,
+      username,
+      discriminator,
+      avatar
+    } = userResponse.data;
     const payload = {
       id,
       username,
@@ -70,14 +96,16 @@ router.get('/discord/callback', async (req, res) => {
       avatar: avatar ? `https://cdn.discordapp.com/avatars/${id}/${avatar}.png` : null,
       role: 'user'
     };
-    const jwtToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '12h' });
+    const jwtToken = jwt.sign(payload, JWT_SECRET, {
+      expiresIn: '12h'
+    });
 
     let token = encrypt(id, username);
 
     // Construct avatar URL
-    let avatarUrl = avatar
-      ? `https://cdn.discordapp.com/avatars/${id}/${avatar}.png`
-      : null;
+    let avatarUrl = avatar ?
+      `https://cdn.discordapp.com/avatars/${id}/${avatar}.png` :
+      null;
 
     // Save user info to the database
     await querry(

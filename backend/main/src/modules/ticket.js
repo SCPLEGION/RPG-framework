@@ -1,12 +1,27 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
-import { loadTickets, saveTickets } from "./database.js";
+// src/modules/ticket.js
 
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle,ActionRow } from "discord.js";
+import { loadTickets, saveTickets } from "../../utils/database.js";
+
+/**
+ * Object to keep track of the number of tickets created for each type.
+ * @type {{ Pomoc: number, Pytanie: number, Propozycja: number }}
+ */
 const ticketCounters = {
     Pomoc: 0,
     Pytanie: 0,
     Propozycja: 0,
 };
 
+/**
+ * Creates a new ticket channel, manages ticket storage, and handles errors.
+ * Enforces a 100-ticket limit by deleting the oldest ticket if necessary.
+ * 
+ * @async
+ * @param {import('discord.js').Message} msg - The Discord message that triggered the ticket creation.
+ * @param {string} type - The type of ticket (e.g., "Pomoc", "Pytanie", "Propozycja").
+ * @returns {Promise<void>}
+ */
 export async function createTicket(msg, type) {
     const errors = [];
     const tickets = await loadTickets();
@@ -76,6 +91,20 @@ export async function createTicket(msg, type) {
             ],
         });
 
+        /**
+         * @typedef {Object} Ticket
+         * @property {string} type - The type of the ticket.
+         * @property {string} userId - The ID of the user who created the ticket.
+         * @property {string} userTag - The Discord tag of the user.
+         * @property {number} ticketNumber - The ticket number for this type.
+         * @property {string} channelId - The ID of the ticket channel.
+         * @property {string} createdAt - ISO string of ticket creation time.
+         * @property {?string} claimedBy - The ID of the user who claimed the ticket.
+         * @property {?string} closedBy - The ID of the user who closed the ticket.
+         * @property {?any} users - Reserved for future use.
+         * @property {Array<Object>} messages - Array of messages in the ticket.
+         */
+
         const ticket = {
             type,
             userId: msg.author.id,
@@ -91,7 +120,7 @@ export async function createTicket(msg, type) {
 
         tickets.push(ticket);
         try {
-            await saveTickets(tickets);
+            saveTickets(tickets);
         } catch (err) {
             errors.push(`Failed to save tickets: ${err.message}`);
         }

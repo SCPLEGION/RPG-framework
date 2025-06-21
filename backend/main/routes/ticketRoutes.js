@@ -1,7 +1,8 @@
 // Enhanced ticketRoutes.js with JS Doc and Swagger annotations
 import express from 'express';
-import { loadTickets, saveTickets, querry } from "../src/modules/database.js";
+import { loadTickets, saveTickets, querry } from "../utils/database.js";
 import { sendmsg } from '../src/bot.js';
+import { bus } from '../utils/Commbus.js';
 
 const router = express.Router();
 
@@ -26,11 +27,10 @@ const router = express.Router();
 // @ts-ignore
 router.get('/tickets', async (req, res) => {
     try {
-        const tickets = loadTickets();
-        res.json(tickets);
-    } catch (error) {
-        console.error("Error loading tickets:", error);
-        res.status(500).json({ error: "Failed to load tickets" });
+        const tickets = await bus.request('getTickets', {});
+        console.log(tickets);
+    } catch (err) {
+        console.error('Failed to get tickets:', err.message);
     }
 });
 
@@ -64,12 +64,13 @@ router.post('/tickets', async (req, res) => {
             return res.status(400).json({ error: "Title and description are required" });
         }
 
-        const tickets = loadTickets();
+        const tickets = await loadTickets();
         const newTicket = {
-            id: tickets.length + 1,
+            id: tickets.length > 0 ? Math.max(...tickets.map(t => t.id)) + 1 : 1,
             title,
             description,
         };
+
 
         tickets.push(newTicket);
         saveTickets(tickets);
@@ -101,7 +102,7 @@ router.post('/tickets', async (req, res) => {
  */
 router.get('/tickets/:id', async (req, res) => {
     try {
-        const tickets = loadTickets();
+        const tickets = await loadTickets();
         const ticket = tickets.find(t => t.id === parseInt(req.params.id));
         if (ticket) {
             res.json(ticket);
@@ -149,7 +150,7 @@ router.put('/tickets/:id', async (req, res) => {
         const ticketId = parseInt(req.params.id);
         const updatedData = req.body;
 
-        const tickets = loadTickets();
+        const tickets = await loadTickets();
         const ticketIndex = tickets.findIndex(t => t.id === ticketId);
 
         if (ticketIndex === -1) {
@@ -190,9 +191,10 @@ router.delete('/tickets/:id/delete', async (req, res) => {
         const ticketId = parseInt(req.params.id);
         const result = await querry('DELETE FROM tickets WHERE id = ?', [ticketId]);
 
-        if (result.affectedRows === 0) {
+        if (result.changes === 0) {
             return res.status(404).json({ error: "Ticket not found" });
         }
+
 
         res.status(200).json({ message: "Ticket deleted successfully" });
     } catch (error) {
@@ -274,7 +276,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
             return res.status(400).json({ error: "Reply content is required" });
         }
 
-        const tickets = loadTickets();
+        const tickets = await loadTickets();
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) {
             return res.status(404).json({ error: "Ticket not found" });
@@ -306,7 +308,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
 // @ts-ignore
 router.get('/tickets/count', async (req, res) => {
     try {
-        const tickets = loadTickets();
+        const tickets = await loadTickets();
         res.json({ count: tickets.length });
     } catch (error) {
         console.error("Error getting ticket count:", error);

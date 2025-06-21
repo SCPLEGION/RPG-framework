@@ -1,5 +1,7 @@
+// src/modules/interaction.js
+
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, Client } from 'discord.js';
-import { loadTickets, saveTickets } from "./database.js";
+import { loadTickets, saveTickets } from "../../utils/database.js";
 
 const claimedTickets = new Map();
 

@@ -1,6 +1,8 @@
+// src/modules/redirector.js
+
 import { createTicket } from "./ticket.js";
 import { handleInteraction } from "./interaction.js";
-import { loadTickets, saveTickets } from "./database.js";
+import { loadTickets, saveTickets } from "../../utils/database.js";
 
 export async function redirect(msg) {
 
@@ -19,10 +21,11 @@ export async function redirect(msg) {
     }
     if (msg.author.bot) return;
     if (msg.channelId === '1354178493784654054') {
-        createTicket(msg, 'Pomoc');
+        await createTicket(msg, 'Pomoc');  // Add await here
     } else if (msg.channelId === '1354178654753521674') {
-        createTicket(msg, 'Pytanie');
+        await createTicket(msg, 'Pytanie');  // Add await here
     }
 }
+
 
 export { handleInteraction };

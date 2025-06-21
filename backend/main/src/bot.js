@@ -6,7 +6,7 @@
 import { Client, GatewayIntentBits, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import { redirect, handleInteraction } from './modules/redirector.js';
-import { querry } from './modules/database.js';
+import { querry } from '../utils/database.js';
 
 /**
  * Saves a user's data to the database.

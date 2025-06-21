@@ -8,11 +8,14 @@ import discordroutes from './routes/discordroutes.js';
 import swaggerJsdoc from 'swagger-jsdoc';
 import yaml from 'js-yaml';
 import { authenticateJWT } from './middleware/auth.js';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
+
 
 // Swagger setup
 const swaggerOptions = {
@@ -24,14 +27,16 @@ const swaggerOptions = {
       description: 'API Documentation using Swagger with Express',
     },
   },
-  apis: ['./routes/*.js'], // Pointing to the route files for Swagger
-  components: ['./components/*.js'], // Pointing to the components files for Swagger
+  apis: ['./routes/*.js'],
+  components: ['./components/*.js'],
 };
+
+// Generate Swagger YAML once at startup
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+const swaggerYaml = yaml.dump(swaggerDocs);
 
 // Serve /api/swagger.yaml WITHOUT authentication
 app.get('/api/swagger.yaml', (req, res) => {
-  const swaggerDocs = swaggerJsdoc(swaggerOptions);
-  const swaggerYaml = yaml.dump(swaggerDocs);
   res.type('text/yaml').send(swaggerYaml);
 });
 
@@ -52,18 +57,26 @@ app.get('/', (req, res) => {
   });
 });
 
+// Record server start time
+const serverStart = Date.now();
+
+// Middleware to time each request
 app.use((req, res, next) => {
-  console.log('Time:', Date.now())
-  console.log('Method:', req.method)
-  console.log('URL:', req.url)
-  console.log('Body:', req.body)
-  console.log('Query:', req.query)
-  console.log('Params:', req.params)
-  next()
-})
+  const reqStart = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - reqStart;
+    console.log(`[TIMER] ${req.method} ${req.url} took ${duration}ms`);
+  });
+  next();
+});
 
 // Start the server
 app.listen(3000, () => {
-  console.log('Server is running on http://localhost:3000');
-  console.log('Swagger UI is available at http://localhost:3000/api-docs');
+  const startupDuration = Date.now() - serverStart;
+  console.log('===========================================');
+  console.log('🚀 Server is running on http://localhost:3000');
+  console.log('📄 Swagger YAML available at http://localhost:3000/api/swagger.yaml');
+  console.log('🖥️  Swagger UI is available at http://localhost:3000/api-docs');
+  console.log(`⏱️  Startup time: ${startupDuration}ms`);
+  console.log('===========================================');
 });
