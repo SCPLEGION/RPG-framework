@@ -14,7 +14,6 @@ const config = JSON.parse(configJson);
 export let db;
 export let mysqlConn;
 
-// Initialize database if configured
 if (config.storage === "sqlite") {
     db = new Database('./tickets.db');
 
@@ -31,8 +30,8 @@ if (config.storage === "sqlite") {
             claimedBy TEXT,
             closedBy TEXT,
             users TEXT,
-            closingReason TEXT, -- New column for closing reason
-            messages TEXT -- New column to store ticket messages as JSON
+            closingReason TEXT,
+            messages TEXT
         );
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
@@ -52,7 +51,7 @@ if (config.storage === "sqlite") {
             userTag TEXT,
             ticketNumber INTEGER,
             status INTEGER,
-            channelId TEXT UNIQUE, -- Add UNIQUE constraint here
+            channelId TEXT UNIQUE,
             createdAt TEXT,
             claimedBy TEXT,
             closedBy TEXT,
@@ -78,11 +77,13 @@ if (config.storage === "sqlite") {
         password: config.mysql.password,
         database: config.mysql.database,
         enableKeepAlive: true,
-        keepAliveInitialDelay: 10000 // 10 seconds
-    })
+        keepAliveInitialDelay: 10000,
+        connectTimeout: 10000,
+        connectionLimit: 2
+    });
+
     console.debug('[Database] MySQL connection established');
 
-    // Create tables if not exist
     await mysqlConn.execute(`
         CREATE TABLE IF NOT EXISTS tickets (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -113,11 +114,6 @@ if (config.storage === "sqlite") {
     `);
 }
 
-/**
- * Loads tickets from the database or JSON file based on the storage configuration.
- * @returns {Promise<Array<Object>>} An array of ticket objects.
- */
-
 export const loadTickets = async () => {
     if (config.storage === "json") {
         try {
@@ -138,7 +134,7 @@ export const loadTickets = async () => {
             closingReason: row.closingReason || null
         }));
     } else if (config.storage === "mysql") {
-        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn?.ping();
         const [rows] = await mysqlConn.execute("SELECT * FROM tickets");
         for (const row of rows) {
             await updateTicketStatus(row.id);
@@ -151,14 +147,9 @@ export const loadTickets = async () => {
     }
 };
 
-
-
-/**
- * Saves tickets to the database or JSON file based on the storage configuration.
- * @param {Array<Object>} tickets - An array of ticket objects to save.
- */
 export const saveTickets = async (tickets) => {
     console.debug('[saveTickets] Called with', tickets.length, 'tickets');
+
     if (config.storage === "json") {
         try {
             console.debug('[saveTickets] Using JSON storage');
@@ -169,63 +160,57 @@ export const saveTickets = async (tickets) => {
         }
     } else if (config.storage === "sqlite") {
         console.debug('[saveTickets] Using SQLite storage');
-        // Your existing SQLite logic here (can stay sync since better-sqlite3 is sync)
-        // but wrap in Promise.resolve for consistency:
-        return Promise.resolve(() => {
-            const usersSet = new Set();
-            for (const ticket of tickets) {
-                if (Array.isArray(ticket.messages)) {
-                    ticket.messages.forEach(msg => {
-                        if (msg.authorId) usersSet.add(msg.authorId);
-                    });
-                }
-                ticket.users = JSON.stringify(Array.from(usersSet));
-                usersSet.clear();
-            }
 
-            const insertOrUpdateStmt = db.prepare(`
-                INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(channelId) DO UPDATE SET
-                    type = excluded.type,
-                    userId = excluded.userId,
-                    userTag = excluded.userTag,
-                    ticketNumber = excluded.ticketNumber,
-                    createdAt = excluded.createdAt,
-                    claimedBy = excluded.claimedBy,
-                    closedBy = excluded.closedBy,
-                    closingReason = excluded.closingReason,
-                    users = excluded.users,
-                    messages = excluded.messages,
-                    status = excluded.status
-            `);
+        const usersSet = new Set();
+        const insertOrUpdateStmt = db.prepare(`
+            INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(channelId) DO UPDATE SET
+                type = excluded.type,
+                userId = excluded.userId,
+                userTag = excluded.userTag,
+                ticketNumber = excluded.ticketNumber,
+                createdAt = excluded.createdAt,
+                claimedBy = excluded.claimedBy,
+                closedBy = excluded.closedBy,
+                closingReason = excluded.closingReason,
+                users = excluded.users,
+                messages = excluded.messages,
+                status = excluded.status
+        `);
 
-            for (const ticket of tickets) {
-                try {
-                    insertOrUpdateStmt.run(
-                        ticket.id || null,
-                        ticket.type,
-                        ticket.userId,
-                        ticket.userTag,
-                        ticket.ticketNumber,
-                        ticket.channelId,
-                        ticket.createdAt,
-                        ticket.claimedBy,
-                        ticket.closedBy,
-                        ticket.closingReason,
-                        ticket.users,
-                        JSON.stringify(ticket.messages || []),
-                        ticket.status
-                    );
-                    console.debug(`[saveTickets] Ticket saved/updated: channelId=${ticket.channelId}, id=${ticket.id}`);
-                } catch (err) {
-                    console.error(`[saveTickets] Error saving ticket: channelId=${ticket.channelId}, id=${ticket.id}`, err);
-                }
+        for (const ticket of tickets) {
+            if (Array.isArray(ticket.messages)) {
+                ticket.messages.forEach(msg => {
+                    if (msg.authorId) usersSet.add(msg.authorId);
+                });
             }
-            console.debug('[saveTickets] All tickets processed for SQLite');
-        });
+            const usersJson = JSON.stringify(Array.from(usersSet));
+            usersSet.clear();
+
+            try {
+                insertOrUpdateStmt.run(
+                    ticket.id || null,
+                    ticket.type,
+                    ticket.userId,
+                    ticket.userTag,
+                    ticket.ticketNumber,
+                    ticket.channelId,
+                    ticket.createdAt,
+                    ticket.claimedBy,
+                    ticket.closedBy,
+                    ticket.closingReason,
+                    usersJson,
+                    JSON.stringify(ticket.messages || []),
+                    ticket.status
+                );
+                console.debug(`[saveTickets] Ticket saved/updated: channelId=${ticket.channelId}, id=${ticket.id}`);
+            } catch (err) {
+                console.error(`[saveTickets] Error saving ticket: channelId=${ticket.channelId}, id=${ticket.id}`, err);
+            }
+        }
     } else if (config.storage === "mysql") {
-        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn?.ping();
         console.debug('[saveTickets] Using MySQL storage');
         const insertOrUpdateStmt = `
             INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages, status)
@@ -248,139 +233,134 @@ export const saveTickets = async (tickets) => {
             try {
                 await mysqlConn.execute(insertOrUpdateStmt, [
                     ticket.id || null,
-                    ticket.type,
-                    ticket.userId,
-                    ticket.userTag,
-                    ticket.ticketNumber,
-                    ticket.channelId,
-                    ticket.createdAt,
-                    ticket.claimedBy,
-                    ticket.closedBy,
-                    ticket.closingReason,
-                    ticket.users,
+                    ticket.type || '',
+                    ticket.userId || '',
+                    ticket.userTag || '',
+                    ticket.ticketNumber || 0,
+                    ticket.channelId || '',
+                    ticket.createdAt || '',
+                    ticket.claimedBy || null,
+                    ticket.closedBy || null,
+                    ticket.closingReason || '',
+                    ticket.users || '[]',
                     JSON.stringify(ticket.messages || []),
-                    ticket.status
+                    ticket.status ?? 2
                 ]);
                 console.debug(`[saveTickets] Ticket saved/updated: channelId=${ticket.channelId}, id=${ticket.id}`);
             } catch (err) {
                 console.error(`[saveTickets] Error saving ticket: channelId=${ticket.channelId}, id=${ticket.id}`, err);
             }
         }
-        console.debug('[saveTickets] All tickets processed for MySQL');
     } else {
         console.warn('[saveTickets] Unknown storage type:', config.storage);
     }
 };
 
-
-/**
- * Updates the status of a ticket based on its current state.
- * @param {number} ticketId - The ID of the ticket to update.
- */
 export const updateTicketStatus = async (ticketId) => {
     if (config.storage === "sqlite") {
         const ticket = db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId);
-        
         if (ticket) {
-            let status;
-
-            if (ticket.closedBy !== null) {
-                status = 0; // closed
-            } else if (ticket.claimedBy !== null) {
-                status = 1; // claimed
-            } else {
-                status = 2; // unclaimed
-            }
-
+            let status = ticket.closedBy !== null ? 0 : ticket.claimedBy !== null ? 1 : 2;
             db.prepare("UPDATE tickets SET status = ? WHERE id = ?").run(status, ticketId);
         }
     } else if (config.storage === "mysql") {
-        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn?.ping();
         const [ticket] = await mysqlConn.execute("SELECT * FROM tickets WHERE id = ?", [ticketId]);
-        
         if (ticket.length > 0) {
-            let status;
-
-            if (ticket[0].closedBy !== null) {
-                status = 0; // closed
-            } else if (ticket[0].claimedBy !== null) {
-                status = 1; // claimed
-            } else {
-                status = 2; // unclaimed
-            }
-
+            let status = ticket[0].closedBy !== null ? 0 : ticket[0].claimedBy !== null ? 1 : 2;
             await mysqlConn.execute("UPDATE tickets SET status = ? WHERE id = ?", [status, ticketId]);
         }
     }
 };
 
-/**
- * Claims a ticket by assigning it to a user.
- * @param {number} ticketId - The ID of the ticket to claim.
- * @param {string} userId - The ID of the user claiming the ticket.
- */
 export const claimTicket = async (ticketId, userId) => {
     if (config.storage === "sqlite") {
         db.prepare("UPDATE tickets SET claimedBy = ? WHERE id = ?").run(userId, ticketId);
         await updateTicketStatus(ticketId);
     } else if (config.storage === "mysql") {
-        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn?.ping();
         await mysqlConn.execute("UPDATE tickets SET claimedBy = ? WHERE id = ?", [userId, ticketId]);
         await updateTicketStatus(ticketId);
     }
 };
 
-/**
- * Closes a ticket with a specified reason.
- * @param {number} ticketId - The ID of the ticket to close.
- * @param {string} userId - The ID of the user closing the ticket.
- * @param {string} reason - The reason for closing the ticket.
- */
 export const closeTicket = async (ticketId, userId, reason) => {
     if (config.storage === "sqlite") {
         db.prepare("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?").run(userId, reason, ticketId);
         await updateTicketStatus(ticketId);
     } else if (config.storage === "mysql") {
-        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn?.ping();
         await mysqlConn.execute("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?", [userId, reason, ticketId]);
         await updateTicketStatus(ticketId);
     }
 };
 
-/**
- * Executes a custom SQL query on the database.
- * @param {string} query - The SQL query to execute.
- * @param {Array<any>} params - The parameters for the SQL query.
- * @returns {Object} The result of the query execution.
- * @throws {Error} If the storage type is not supported.
- */
-export const querry = async (query, params) => {
-    if (config.storage === "sqlite") {
-        return db.prepare(query).run(params);
-    } else if (config.storage === "mysql") {
+const queryQueue = [];
+let isProcessingQueue = false;
+
+async function processQueryQueue() {
+    if (isProcessingQueue) return;
+    isProcessingQueue = true;
+
+    while (queryQueue.length > 0) {
+        const { query, params, resolve, reject } = queryQueue.shift();
         try {
-            await mysqlConn?.ping();
+            const result = await _querry(query, params);
+            resolve(result);
         } catch (err) {
-            // Jeœli po³¹czenie pad³o, spróbuj po³¹czyæ siê ponownie
-            console.warn('[querry] MySQL connection lost. Reconnecting...');
-            mysqlConn = await mysql.createConnection({
-                host: config.mysql.host,
-                user: config.mysql.user,
-                password: config.mysql.password,
-                database: config.mysql.database,
-            });
-            await mysqlConn.ping();
+            console.error('[processQueryQueue] Query error:', err);
+            reject(err);
         }
-        const [result] = await mysqlConn.execute(query, params);
-        return result;
-    } else {
-        throw new Error("Database storage type not supported for this operation.");
     }
+
+    isProcessingQueue = false;
+}
+
+const _querry = async (query, params = []) => {
+    if (config.storage === "mysql") {
+        try {
+            if (!mysqlConn || mysqlConn.connection._closing) {
+                throw new Error("No active MySQL connection.");
+            }
+
+            await mysqlConn.ping();
+            const [result] = await mysqlConn.execute(query, params);
+            return result;
+        } catch (err) {
+            console.warn('[querry] MySQL connection failed, retrying...', err.message);
+            try {
+                mysqlConn = await mysql.createConnection({
+                    host: config.mysql.host,
+                    user: config.mysql.user,
+                    password: config.mysql.password,
+                    database: config.mysql.database,
+                    enableKeepAlive: true
+                });
+                const [result] = await mysqlConn.execute(query, params);
+                return result;
+            } catch (reErr) {
+                console.error('[querry] MySQL re-connection also failed:', reErr.message);
+                throw reErr;
+            }
+        }
+    } else if (config.storage === "sqlite") {
+        return db.prepare(query).run(...params);
+    } else {
+        throw new Error("Unsupported storage type.");
+    }
+};
+
+
+
+export const querry = (query, params) => {
+    return new Promise((resolve, reject) => {
+        queryQueue.push({ query, params, resolve, reject });
+        processQueryQueue();
+    });
 };
 
 bus.on('querry', async (data) => {
     const { id, query, params } = data;
-
     try {
         const result = await querry(query, params);
         bus.emit('query:result', { id, result });
@@ -391,14 +371,13 @@ bus.on('querry', async (data) => {
 });
 
 bus.on('getTickets', async (data) => {
-  try {
-    const tickets = await loadTickets();
-    bus.emit(`getTickets:response:${data.id}`, tickets);
-  } catch (err) {
-    bus.emit(`getTickets:error:${data.id}`, { message: err.message });
-  }
+    try {
+        const tickets = await loadTickets();
+        bus.emit(`getTickets:response:${data.id}`, tickets);
+    } catch (err) {
+        bus.emit(`getTickets:error:${data.id}`, { message: err.message });
+    }
 });
-
 
 bus.on('saveTickets', async (tickets) => {
     try {

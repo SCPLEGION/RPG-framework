@@ -53,10 +53,10 @@ export class CommunicationBus {
      * Emit a request and wait for a response.
      * @param {string} eventName - Event name to emit.
      * @param {any} data - Data to send.
-     * @param {number} [timeout=5000] - Timeout in ms.
+     * @param {number} [timeout=10000] - Timeout in ms.
      * @returns {Promise<any>} Resolves with response data or rejects on error/timeout.
      */
-    request(eventName, data, timeout = 5000) {
+    request(eventName, data, timeout = 10000) {
         return new Promise((resolve, reject) => {
             const id = crypto.randomUUID?.() || Math.random().toString(36).substring(2);
             const responseEvent = `${eventName}:response:${id}`;

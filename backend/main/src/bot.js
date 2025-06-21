@@ -119,14 +119,16 @@ async function savetodb(x) {
             [id, username, displayName, discriminator, 'user', 0, username, displayName, discriminator]
         );
     } else if (config.storage === "mysql") {
-        let data =[
-            `INSERT INTO users (id, username, displayName, discriminator, role, token)
+        let data = {
+            query:
+                `INSERT INTO users (id, username, displayName, discriminator, role, token)
              VALUES (?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 username = VALUES(username),
                 displayName = VALUES(displayName),
-                discriminator = VALUES(discriminator)`,[id, username, displayName, discriminator, 'user', 0, username, displayName, discriminator]]
-        bus.request('querry', data);
+                discriminator = VALUES(discriminator)`, params: [ id, username, displayName, discriminator, 'user', 0, username, displayName, discriminator ]
+            }
+        bus.emit('querry', data);
     }
 }
 
