@@ -1,7 +1,6 @@
 // Enhanced ticketRoutes.js with JS Doc and Swagger annotations
 import express from 'express';
 import { loadTickets, saveTickets, querry } from "../utils/database.js";
-import { sendmsg } from '../src/bot.js';
 import { bus } from '../utils/Commbus.js';
 
 const router = express.Router();
@@ -36,54 +35,6 @@ router.get('/tickets', async (req, res) => {
 
 /**
  * @swagger
- * /api/tickets:
- *   post:
- *     summary: Create a new ticket
- *     tags: [tickets]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [title, description]
- *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *     responses:
- *       201:
- *         description: Ticket created
- */
-// @ts-ignore
-router.post('/tickets', async (req, res) => {
-    try {
-        const { title, description } = req.body;
-        if (!title || !description) {
-            return res.status(400).json({ error: "Title and description are required" });
-        }
-
-        const tickets = await loadTickets();
-        const newTicket = {
-            id: tickets.length > 0 ? Math.max(...tickets.map(t => t.id)) + 1 : 1,
-            title,
-            description,
-        };
-
-
-        tickets.push(newTicket);
-        saveTickets(tickets);
-
-        res.status(201).json(newTicket);
-    } catch (error) {
-        console.error("Error creating ticket:", error);
-        res.status(500).json({ error: "Failed to create ticket" });
-    }
-});
-
-/**
- * @swagger
  * /api/tickets/{id}:
  *   get:
  *     summary: Get ticket by ID
@@ -102,7 +53,7 @@ router.post('/tickets', async (req, res) => {
  */
 router.get('/tickets/:id', async (req, res) => {
     try {
-        const tickets = await loadTickets();
+        const tickets = await bus.request('getTickets', {});
         const ticket = tickets.find(t => t.id === parseInt(req.params.id));
         if (ticket) {
             res.json(ticket);
@@ -150,7 +101,7 @@ router.put('/tickets/:id', async (req, res) => {
         const ticketId = parseInt(req.params.id);
         const updatedData = req.body;
 
-        const tickets = await loadTickets();
+        const tickets = bus.request('getTickets', {});
         const ticketIndex = tickets.findIndex(t => t.id === ticketId);
 
         if (ticketIndex === -1) {
@@ -158,7 +109,7 @@ router.put('/tickets/:id', async (req, res) => {
         }
 
         tickets[ticketIndex] = { ...tickets[ticketIndex], ...updatedData };
-        saveTickets(tickets);
+        bus.emit('saveTickets', tickets);
 
         res.status(200).json({ message: "Ticket updated successfully" });
     } catch (error) {
@@ -189,14 +140,13 @@ router.put('/tickets/:id', async (req, res) => {
 router.delete('/tickets/:id/delete', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
-        const result = await querry('DELETE FROM tickets WHERE id = ?', [ticketId]);
-
-        if (result.changes === 0) {
-            return res.status(404).json({ error: "Ticket not found" });
+        let data = { quarry: 'DELETE FROM tickets WHERE id = ?',params:[ticketId]}
+        const result = await bus.request('querry', data);
+        if (result) {
+            res.status(200).json({ message: "Ticket deleted successfully" });
+        } else {
+            res.status(500).json({ error: "Failed to delete ticket" });
         }
-
-
-        res.status(200).json({ message: "Ticket deleted successfully" });
     } catch (error) {
         console.error("Error deleting ticket:", error);
         res.status(500).json({ error: "Failed to delete ticket" });
@@ -276,7 +226,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
             return res.status(400).json({ error: "Reply content is required" });
         }
 
-        const tickets = await loadTickets();
+        const tickets = await bus.request('getTickets', {});
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) {
             return res.status(404).json({ error: "Ticket not found" });
@@ -285,8 +235,8 @@ router.post('/tickets/:id/reply', async (req, res) => {
             ticket.replies = [];
         }
         ticket.replies.push(reply);
-        saveTickets(tickets);
-        sendmsg(ticket.channelId, reply);
+        bus.emit('saveTickets', tickets);
+        bus.emit('sendmsg', { channelId: ticket.channelId, msg: reply });
 
         res.status(200).json({ message: "Reply added successfully" });
     } catch (error) {
@@ -308,7 +258,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
 // @ts-ignore
 router.get('/tickets/count', async (req, res) => {
     try {
-        const tickets = await loadTickets();
+        const tickets = await bus.request('getTickets', {});
         res.json({ count: tickets.length });
     } catch (error) {
         console.error("Error getting ticket count:", error);

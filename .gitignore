@@ -3,3 +3,4 @@
 /backend/node_modules
 /backend/main/node_modules
 .env
+/.vs

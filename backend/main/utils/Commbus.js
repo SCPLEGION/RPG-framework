@@ -90,7 +90,7 @@ export class CommunicationBus {
             this.emit(eventName, {
                 ...data,
                 id
-            });
+            })
         });
     }
 

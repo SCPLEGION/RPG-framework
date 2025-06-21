@@ -7,6 +7,11 @@ import { Client, GatewayIntentBits, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import { redirect, handleInteraction } from './modules/redirector.js';
 import { querry } from '../utils/database.js';
+import fs from "fs/promises";
+import { bus } from '../utils/Commbus.js';
+
+const configJson = await fs.readFile(new URL("../config.json", import.meta.url), "utf8");
+const config = JSON.parse(configJson);
 
 /**
  * Saves a user's data to the database.
@@ -103,10 +108,26 @@ client.once('ready', async () => {
 
 async function savetodb(x) {
     const { id, username, discriminator, displayName } = x;
-    await querry(
-        `INSERT INTO users (id, username,displayName , discriminator, role, token) VALUES (? ,? , ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET username = ?,displayName = ?, discriminator = ?`,
-        [id, username,displayName, discriminator, 'user', 0, username, displayName, discriminator]
-    );
+    if (config.storage === "sqlite") {
+        await querry(
+            `INSERT INTO users (id, username, displayName, discriminator, role, token)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET
+                username = excluded.username,
+                displayName = excluded.displayName,
+                discriminator = excluded.discriminator`,
+            [id, username, displayName, discriminator, 'user', 0, username, displayName, discriminator]
+        );
+    } else if (config.storage === "mysql") {
+        let data =[
+            `INSERT INTO users (id, username, displayName, discriminator, role, token)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                username = VALUES(username),
+                displayName = VALUES(displayName),
+                discriminator = VALUES(discriminator)`,[id, username, displayName, discriminator, 'user', 0, username, displayName, discriminator]]
+        bus.request('querry', data);
+    }
 }
 
 
@@ -129,6 +150,11 @@ export function sendmsg(channelId, msg) {
     }
     
 }
+
+bus.on('sendmsg', (data) => {
+    const { channelId, msg } = data;
+    sendmsg(channelId, msg);
+});
 
 export async function fetchavatar(userId) {
     try {

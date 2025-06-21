@@ -77,7 +77,10 @@ if (config.storage === "sqlite") {
         user: config.mysql.user,
         password: config.mysql.password,
         database: config.mysql.database,
-    });
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000 // 10 seconds
+    })
+    console.debug('[Database] MySQL connection established');
 
     // Create tables if not exist
     await mysqlConn.execute(`
@@ -135,6 +138,7 @@ export const loadTickets = async () => {
             closingReason: row.closingReason || null
         }));
     } else if (config.storage === "mysql") {
+        await mysqlConn?.ping(); // Ensure MySQL connection is alive
         const [rows] = await mysqlConn.execute("SELECT * FROM tickets");
         for (const row of rows) {
             await updateTicketStatus(row.id);
@@ -221,6 +225,7 @@ export const saveTickets = async (tickets) => {
             console.debug('[saveTickets] All tickets processed for SQLite');
         });
     } else if (config.storage === "mysql") {
+        await mysqlConn?.ping(); // Ensure MySQL connection is alive
         console.debug('[saveTickets] Using MySQL storage');
         const insertOrUpdateStmt = `
             INSERT INTO tickets (id, type, userId, userTag, ticketNumber, channelId, createdAt, claimedBy, closedBy, closingReason, users, messages, status)
@@ -290,6 +295,7 @@ export const updateTicketStatus = async (ticketId) => {
             db.prepare("UPDATE tickets SET status = ? WHERE id = ?").run(status, ticketId);
         }
     } else if (config.storage === "mysql") {
+        await mysqlConn?.ping(); // Ensure MySQL connection is alive
         const [ticket] = await mysqlConn.execute("SELECT * FROM tickets WHERE id = ?", [ticketId]);
         
         if (ticket.length > 0) {
@@ -313,13 +319,14 @@ export const updateTicketStatus = async (ticketId) => {
  * @param {number} ticketId - The ID of the ticket to claim.
  * @param {string} userId - The ID of the user claiming the ticket.
  */
-export const claimTicket = (ticketId, userId) => {
+export const claimTicket = async (ticketId, userId) => {
     if (config.storage === "sqlite") {
         db.prepare("UPDATE tickets SET claimedBy = ? WHERE id = ?").run(userId, ticketId);
-        updateTicketStatus(ticketId);
+        await updateTicketStatus(ticketId);
     } else if (config.storage === "mysql") {
-        db.prepare("UPDATE tickets SET claimedBy = ? WHERE id = ?").run(userId, ticketId);
-        updateTicketStatus(ticketId);
+        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn.execute("UPDATE tickets SET claimedBy = ? WHERE id = ?", [userId, ticketId]);
+        await updateTicketStatus(ticketId);
     }
 };
 
@@ -329,13 +336,14 @@ export const claimTicket = (ticketId, userId) => {
  * @param {string} userId - The ID of the user closing the ticket.
  * @param {string} reason - The reason for closing the ticket.
  */
-export const closeTicket = (ticketId, userId, reason) => {
+export const closeTicket = async (ticketId, userId, reason) => {
     if (config.storage === "sqlite") {
         db.prepare("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?").run(userId, reason, ticketId);
-        updateTicketStatus(ticketId);
+        await updateTicketStatus(ticketId);
     } else if (config.storage === "mysql") {
-        db.prepare("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?").run(userId, reason, ticketId);
-        updateTicketStatus(ticketId);
+        await mysqlConn?.ping(); // Ensure MySQL connection is alive
+        await mysqlConn.execute("UPDATE tickets SET closedBy = ?, closingReason = ? WHERE id = ?", [userId, reason, ticketId]);
+        await updateTicketStatus(ticketId);
     }
 };
 
@@ -346,15 +354,31 @@ export const closeTicket = (ticketId, userId, reason) => {
  * @returns {Object} The result of the query execution.
  * @throws {Error} If the storage type is not supported.
  */
-export const querry = (query, params) => {
+export const querry = async (query, params) => {
     if (config.storage === "sqlite") {
         return db.prepare(query).run(params);
+    } else if (config.storage === "mysql") {
+        try {
+            await mysqlConn?.ping();
+        } catch (err) {
+            // Jeœli po³¹czenie pad³o, spróbuj po³¹czyæ siê ponownie
+            console.warn('[querry] MySQL connection lost. Reconnecting...');
+            mysqlConn = await mysql.createConnection({
+                host: config.mysql.host,
+                user: config.mysql.user,
+                password: config.mysql.password,
+                database: config.mysql.database,
+            });
+            await mysqlConn.ping();
+        }
+        const [result] = await mysqlConn.execute(query, params);
+        return result;
     } else {
         throw new Error("Database storage type not supported for this operation.");
     }
 };
 
-bus.on('query', async (data) => {
+bus.on('querry', async (data) => {
     const { id, query, params } = data;
 
     try {

@@ -1,3 +1,9 @@
 {
-  "storage": "sqlite"
+  "storage": "mysql",
+  "mysql": {
+    "host": "scplegion.ovh",
+    "user": "Bot",
+    "password": "zRzUdiLI[L4[2BwA",
+    "database": "SCPRPG"
+  }
 }
