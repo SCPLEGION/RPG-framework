@@ -16,23 +16,22 @@ if (config.storage === "sqlite") {
     db = new Database("./tickets.db")
 
     db.exec(`
-    CREATE TABLE IF NOT EXISTS tickets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type TEXT,
-      userId TEXT,
-      userTag TEXT,
-      ticketNumber INTEGER,
-      status INTEGER,
-      channelId TEXT UNIQUE,
-      createdAt TEXT,
-      claimedBy TEXT,
-      closedBy TEXT,
-      users TEXT,
-      closingReason TEXT,
-      messages TEXT
-    );
+       CREATE TABLE IF NOT EXISTS [tickets] (
+     [id] INTEGER PRIMARY KEY AUTOINCREMENT
+   , [type] text NULL
+   , [userId] text NULL
+   , [userTag] text NULL
+   , [ticketNumber] int NULL
+   , [status] int NULL
+   , [channelId] text NULL UNIQUE
+   , [createdAt] text NULL
+   , [claimedBy] text NULL
+   , [closedBy] text NULL
+   , [users] text NULL
+   , [closingReason] text NULL
+   , [messages] text NULL
+   );
 
-    CREATE UNIQUE INDEX IF NOT EXISTS idx_tickets_channelId ON tickets(channelId);
 
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -235,11 +234,27 @@ export const closeTicket = async (ticketId, userId, reason) => {
     await updateTicketStatus(ticketId);
 };
 
+/**
+ * Manages support tickets by providing methods to interact with different storage backends.
+ */
 export class TicketManager {
-    async close(id, userId, reason) {
+    /**
+     * Closes a ticket with the given ID, user, and reason.
+     * @param {string} id - The ID of the ticket to close.
+     * @param {string} userId - The ID of the user closing the ticket.
+     * @param {string} reason - The reason for closing the ticket.
+     * @returns {Promise<void>}
+     */
+    static async close(id, userId, reason) {
         await closeTicket(id, userId, reason);
     }
-    async delete(id) {
+
+    /**
+     * Deletes a ticket by ID from the current storage (sqlite, mysql, or file-based).
+     * @param {string} id - The ID of the ticket to delete.
+     * @returns {Promise<void>}
+     */
+    static async delete(id) {
         if (config.storage === "sqlite") {
             db.prepare("DELETE FROM tickets WHERE id = ?").run(id);
         } else if (config.storage === "mysql") {
@@ -249,10 +264,23 @@ export class TicketManager {
             await saveTickets(all.filter(t => t.id !== id));
         }
     }
-    async claim(id, userId) {
+
+    /**
+     * Marks a ticket as claimed by a specific user.
+     * @param {string} id - The ID of the ticket to claim.
+     * @param {string} userId - The ID of the user claiming the ticket.
+     * @returns {Promise<void>}
+     */
+    static async claim(id, userId) {
         await claimTicket(id, userId);
     }
-    async get(id) {
+
+    /**
+     * Retrieves a ticket by its ID from the current storage.
+     * @param {string} id - The ID of the ticket to retrieve.
+     * @returns {Promise<Object|null>} The ticket object, or null if not found.
+     */
+    static async get(id) {
         const query = "SELECT * FROM tickets WHERE id = ?";
         if (config.storage === "sqlite") return db.prepare(query).get(id);
         if (config.storage === "mysql") {
@@ -262,10 +290,26 @@ export class TicketManager {
         const all = await loadTickets();
         return all.find(t => t.id === id) || null;
     }
-    async list() {
+
+    /**
+     * Sends a reply message to a specific ticket.
+     * @param {string} id - The ID of the ticket to reply to.
+     * @param {string} message - The reply message content.
+     * @returns {Promise<void>}
+     */
+    static async reply(id, message) {
+        bus.emit("replyTicket", { id, message });
+    }
+
+    /**
+     * Lists all tickets from the current storage.
+     * @returns {Promise<Object[]>} An array of ticket objects.
+     */
+    static async list() {
         return await loadTickets();
     }
 }
+
 
 const queryQueue = [];
 let isProcessingQueue = false;

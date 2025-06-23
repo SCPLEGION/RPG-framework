@@ -26,6 +26,8 @@ import {
     Avatar,
     Drawer,
 } from '@mui/material';
+
+import { useNavigate } from 'react-router-dom';
 import { FaTicketAlt, FaSync, FaTimesCircle, FaMoon, FaSun, FaSortAmountDown, FaSortAmountUp, FaBars } from 'react-icons/fa';
 import {CustomThemeProvider} from '../ThemeContext.jsx';
 
@@ -40,11 +42,19 @@ const statuses = {
     2: 'Unclaimed',
 };
 
-let headers = {
-    headers: {
-        Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token
+let headers = {};
+function getHeaders() {
+    if (localStorage.getItem('user')) {
+        // Ensure the user is logged in before setting headers
+        headers = {
+            headers: {
+                Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token
+            }
+        };
     }
 }
+
+getHeaders();
 
 const TicketViewer = () => {
     const [selectedTicket, setSelectedTicket] = useState(null);

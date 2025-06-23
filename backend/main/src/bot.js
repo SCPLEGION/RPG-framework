@@ -131,5 +131,7 @@ export async function reply(to, msg) {
     }
 }
 
+
+bus.on('reply', ({ to, msg }) => reply(to, msg));
 bus.on('sendmsg', ({ channelId, msg }) => sendmsg(channelId, msg));
 bus.on('error', err => console.error("CommunicationBus Error:", err));

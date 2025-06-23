@@ -36,7 +36,12 @@ function About() {
 }
 
 function Tickets() {
-  return TicketViewer();
+    let navigate = useNavigate();
+    if (localStorage.getItem('user')) {
+        return TicketViewer();
+    } else {
+        navigate('/login');
+    }
 }
 
 function Login() {

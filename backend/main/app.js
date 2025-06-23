@@ -10,6 +10,8 @@ import discordroutes from './routes/discordroutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { bus } from './utils/Commbus.js';
+import session from 'express-session';
+import passport from './passport.js';
 
 
 const app = express();
@@ -18,6 +20,14 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
+// Add session and passport middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'supersecret',
+  resave: false,
+  saveUninitialized: false
+}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Swagger setup
 const swaggerOptions = {

@@ -1,6 +1,6 @@
 // Enhanced ticketRoutes.js with JS Doc and Swagger annotations
 import express from 'express';
-import { loadTickets, saveTickets, querry } from "../utils/database.js";
+import { loadTickets, saveTickets, querry,TicketManager } from "../utils/database.js";
 import { bus } from '../utils/Commbus.js';
 
 const router = express.Router();
@@ -26,7 +26,7 @@ const router = express.Router();
 // @ts-ignore
 router.get('/tickets', async (req, res) => {
     try {
-        const tickets = await loadTickets();
+        const tickets = await TicketManager.list();
         console.log(tickets);
         res.json(tickets);
     } catch (err) {
@@ -54,8 +54,8 @@ router.get('/tickets', async (req, res) => {
  */
 router.get('/tickets/:id', async (req, res) => {
     try {
-        const tickets = await loadTickets();
-        const ticket = tickets.find(t => t.id === parseInt(req.params.id));
+        const tickets = await TicketManager.list();
+        const ticket = tickets.find(t => t.ticketNumber === parseInt(req.params.id));
         if (ticket) {
             res.json(ticket);
         } else {
