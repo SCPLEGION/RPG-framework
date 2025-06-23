@@ -26,12 +26,11 @@ import {
     Avatar,
     Drawer,
 } from '@mui/material';
-
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { FaTicketAlt, FaSync, FaTimesCircle, FaMoon, FaSun, FaSortAmountDown, FaSortAmountUp, FaBars } from 'react-icons/fa';
+import {CustomThemeProvider} from '../ThemeContext.jsx';
 
 const getInitialDarkMode = () => {
-    const saved = localStorage.getItem('darkMode');
+    const saved = localStorage.getItem('thememode');
     return saved ? JSON.parse(saved) : true;
 };
 
@@ -40,6 +39,12 @@ const statuses = {
     1: 'Claimed',
     2: 'Unclaimed',
 };
+
+let headers = {
+    headers: {
+        Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token
+    }
+}
 
 const TicketViewer = () => {
     const [selectedTicket, setSelectedTicket] = useState(null);
@@ -67,24 +72,10 @@ const TicketViewer = () => {
         debouncedProcessMessage(value); // Debounce any additional processing
     };
 
-    useEffect(() => {
-        localStorage.setItem('darkMode', JSON.stringify(darkMode));
-    }, [darkMode]);
-
-    const theme = createTheme({
-        palette: {
-            mode: darkMode ? 'dark' : 'light',
-        },
-    });
-
     const fetchTickets = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/tickets',{
-                headers: {
-                    Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token
-                }
-            });
+            const response = await fetch('/api/tickets',headers);
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
             const data = await response.json();
             setTicketData(data);
@@ -96,14 +87,14 @@ const TicketViewer = () => {
 
     const fetchMessages = async (ticketId) => {
         try {
-            const response = await fetch(`/api/tickets/${ticketId}`);
+            const response = await fetch(`/api/tickets/${ticketId}`,headers);
             if (!response.ok) throw new Error(`Error: ${response.statusText}`);
             const data = await response.json();
 
             const messagesWithAvatars = await Promise.all(
                 data.messages.map(async (message) => {
                     try {
-                        const avatarResponse = await fetch(`/api/user/avatar/${message.authorId}`);
+                        const avatarResponse = await fetch(`/api/user/avatar/${message.authorId}`,headers);
                         if (!avatarResponse.ok) throw new Error(`Error fetching avatar for user ${message.authorId}`);
                         const avatarData = await avatarResponse.json();
                         return { ...message, authorAvatar: avatarData.avatarUrl };
@@ -125,7 +116,7 @@ const TicketViewer = () => {
         try {
             await fetch(`/api/tickets/${selectedTicket.id}/reply`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reply: newMessage }),
             });
             setNewMessage('');
@@ -137,7 +128,10 @@ const TicketViewer = () => {
 
     const handleCloseTicket = async () => {
         try {
-            await fetch(`/api/tickets/${selectedTicket.id}/close`, { method: 'POST' });
+            await fetch(`/api/tickets/${selectedTicket.id}/close`, {
+                headers: { Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token, 'Content-Type': 'application/json' },
+                method: 'POST'
+            });
             fetchTickets();
             setSelectedTicket(null);
         } catch (err) {
@@ -160,7 +154,7 @@ const TicketViewer = () => {
     );
 
     return (
-        <ThemeProvider theme={theme}>
+        <CustomThemeProvider>
             <CssBaseline />
             <Box display="flex" height="100vh" overflow="hidden">
                 {/* Collapsible Sidebar */}
@@ -184,9 +178,6 @@ const TicketViewer = () => {
                         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                             <Typography variant="h6">Tickets</Typography>
                             <Stack direction="row" spacing={1}>
-                                <IconButton onClick={() => setDarkMode(!darkMode)}>
-                                    {darkMode ? <FaSun /> : <FaMoon />}
-                                </IconButton>
                                 <IconButton
                                     onClick={() => {
                                         fetchTickets();
@@ -298,6 +289,7 @@ const TicketViewer = () => {
                                             onClick={async () => {
                                                 try {
                                                     await fetch(`/api/tickets/${selectedTicket.id}/delete`, {
+                                                        headers: { Authorization: 'Bearer ' + JSON.parse(localStorage.getItem('user')).token, 'Content-Type': 'application/json' },
                                                         method: 'DELETE',
                                                     });
                                                     fetchTickets();
@@ -403,7 +395,7 @@ const TicketViewer = () => {
                     )}
                 </Box>
             </Box>
-        </ThemeProvider>
+        </CustomThemeProvider>
     );
 };
 

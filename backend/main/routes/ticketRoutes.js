@@ -26,8 +26,9 @@ const router = express.Router();
 // @ts-ignore
 router.get('/tickets', async (req, res) => {
     try {
-        const tickets = await bus.request('getTickets', {});
+        const tickets = await loadTickets();
         console.log(tickets);
+        res.json(tickets);
     } catch (err) {
         console.error('Failed to get tickets:', err.message);
     }
@@ -53,7 +54,7 @@ router.get('/tickets', async (req, res) => {
  */
 router.get('/tickets/:id', async (req, res) => {
     try {
-        const tickets = await bus.request('getTickets', {});
+        const tickets = await loadTickets();
         const ticket = tickets.find(t => t.id === parseInt(req.params.id));
         if (ticket) {
             res.json(ticket);
@@ -141,7 +142,7 @@ router.delete('/tickets/:id/delete', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
         let data = { quarry: 'DELETE FROM tickets WHERE id = ?',params:[ticketId]}
-        const result = await bus.request('querry', data);
+        const result = await querry(data);
         if (result) {
             res.status(200).json({ message: "Ticket deleted successfully" });
         } else {
@@ -226,7 +227,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
             return res.status(400).json({ error: "Reply content is required" });
         }
 
-        const tickets = await bus.request('getTickets', {});
+        const tickets = await loadTickets();
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) {
             return res.status(404).json({ error: "Ticket not found" });
@@ -235,7 +236,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
             ticket.replies = [];
         }
         ticket.replies.push(reply);
-        bus.emit('saveTickets', tickets);
+        saveTickets(tickets);
         bus.emit('sendmsg', { channelId: ticket.channelId, msg: reply });
 
         res.status(200).json({ message: "Reply added successfully" });

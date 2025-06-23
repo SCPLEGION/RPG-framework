@@ -24,6 +24,21 @@ export class CommunicationBus {
     }
 
     /**
+    * Subskrybuj zdarzenie tylko raz.
+    * @param {string} eventName 
+    * @param {Function} callback 
+    * @param {boolean} [replay=false] - Jeœli true, natychmiast wywo³aj z ostatnimi danymi, jeœli dostêpne.
+    */
+    once(eventName, callback, replay = false) {
+        const wrapper = (data) => {
+            this.off(eventName, wrapper);
+            callback(data);
+        };
+        this.on(eventName, wrapper, replay);
+    }
+
+
+    /**
      * Unsubscribe from an event.
      * @param {string} eventName 
      * @param {Function} callback 
@@ -49,6 +64,8 @@ export class CommunicationBus {
             }
         }
     }
+
+
     /**
      * Emit a request and wait for a response.
      * @param {string} eventName - Event name to emit.
