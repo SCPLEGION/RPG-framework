@@ -1,24 +1,26 @@
 // src/app.js
 
-import cookieParser from 'cookie-parser';
+import './instrument.js'
+
 import express from 'express';
 import yaml from 'js-yaml';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { authenticateJWT } from './middleware/auth.js';
 import authRoutes from './routes/authRoutes.js';
+import ballisticsRoutes from './routes/ballisticsRoutes.js';
 import discordroutes from './routes/discordroutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { bus } from './utils/Commbus.js';
 import session from 'express-session';
 import passport from './passport.js';
+import * as Sentry from '@sentry/node';
 
 
 const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cookieParser());
 
 // Add session and passport middleware
 app.use(session({
@@ -57,16 +59,19 @@ app.use('/api', authenticateJWT, userRoutes);
 app.use('/api', authenticateJWT, ticketRoutes);
 app.use('/auth', authRoutes);
 app.use('/api', authenticateJWT, discordroutes);
+app.use('/api/ballistics', ballisticsRoutes); // Ballistics routes (public)
 app.get('/api/me', authenticateJWT, (req, res) => {
   // @ts-ignore
   res.json({ user: req.user });
 });
 
 
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Welcome to the SCP RPG Discord Bot API!',
-  });
+app.get("/", function rootHandler(req, res) {
+  res.end("Hello world!");
+});
+
+app.get("/debug-sentry", function mainHandler(req, res) {
+  throw new Error("My first Sentry error!");
 });
 
 // Record server start time
@@ -81,6 +86,15 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+app.use(function onError(err, req, res, next) {
+  // The error id is attached to `res.sentry` to be returned
+  // and optionally displayed to the user for support.
+  res.statusCode = 500;
+  res.end(res.sentry + "\n");
+});
+
+Sentry.setupExpressErrorHandler(app);
 
 // Listen for botReady event and start server only when bot is ready
 bus.once('botReady', (ready) => {

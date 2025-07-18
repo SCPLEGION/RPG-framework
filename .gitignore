@@ -4,3 +4,9 @@
 /backend/main/node_modules
 .env
 /.vs
+
+# Sentry Config File
+.env.sentry-build-plugin
+/backend/main/recordings
+backend/main/.env
+backend/main/.env

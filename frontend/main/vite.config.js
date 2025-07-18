@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
@@ -5,7 +6,11 @@ import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), sentryVitePlugin({
+    org: "scp-inc",
+    project: "node"
+  })],
+
   optimizeDeps: {
     esbuildOptions: {
       define: {
@@ -18,9 +23,11 @@ export default defineConfig({
       ]
     }
   },
+
   resolve: {
     modules: [path.resolve(__dirname, '../../node_modules'), 'node_modules']
   },
+
   server: {
     port: 3001,
     proxy: {
@@ -36,4 +43,8 @@ export default defineConfig({
       },
     },
   },
+
+  build: {
+    sourcemap: true
+  }
 })

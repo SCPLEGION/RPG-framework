@@ -1,68 +1,60 @@
-import TicketViewer from './main/TicketViewer.jsx';
-import AboutPage from './main/index.jsx';
-import login from './main/login.jsx';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import Dashboard from './main/dashboard.jsx';
-import Docs from './main/docs.jsx';
-import BJ from './main/casino/games/BJ.jsx';
-import Gameselector from './main/casino/mainsite.jsx'
-import Roulette from './main/casino/games/Roullet.jsx';
+import AboutPage from './pages/AboutPage.jsx';
+import login from './pages/login.jsx';
+import { 
+  Routes, 
+  Route, 
+  useNavigate, 
+  useLocation, 
+  BrowserRouter,
+  useNavigationType, 
+  createRoutesFromChildren, 
+  matchRoutes, 
+} from 'react-router-dom';
+import React, { useEffect } from 'react';
+import * as Sentry from "@sentry/react";
+
+Sentry.init({
+  dsn: "https://6f43f40b70527b69c77e70088e62d62e@o4508206956478464.ingest.de.sentry.io/4509587125698640",
+  integrations: [
+    Sentry.reactRouterV7BrowserTracingIntegration({
+      useEffect: React.useEffect,
+      useLocation,
+      useNavigationType,
+      createRoutesFromChildren,
+      matchRoutes,
+    }),
+  ],
+  tracesSampleRate: 1.0,
+});
+
+const SentryRoutes = Sentry.withSentryReactRouterV7Routing(Routes);
 
 function App() {
   return (
-    <Routes>
+    <SentryRoutes>
       <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/tickets" element={<Tickets />} />
+      <Route path="/demo" element={<Demo />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={<Dashboardjsx />} />
       <Route path="/login/callback" element={<AuthCallback />} />
-      <Route path="/docs" element={<Docs />} />
-      <Route path="/casino" element={<Gameselector />} />
-      <Route path="/casino/blackjack" element={<BJ />} />
-      <Route path="/casino/roulette" element={<Roulette />} />
-      {/* Add more routes as needed */}
-    </Routes>
+    </SentryRoutes>
   );
 }
 
 function Home() {
-  return AboutPage();
-}
-
-function About() {
-  return <h1>About Page</h1>;
-}
-
-function Tickets() {
-    let navigate = useNavigate();
-    if (localStorage.getItem('user')) {
-        return TicketViewer();
-    } else {
-        navigate('/login');
-    }
+  return <AboutPage />;
 }
 
 function Login() {
   return login();
 }
 
-function Dashboardjsx() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if the user is authenticated
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-
-    if (!isAuthenticated) {
-      console.error('Dash User is not authenticated');
-      // Redirect to the login page if not authenticated
-      navigate('/login');
-    }
-  }, [navigate]);
-
-  return <Dashboard />;
+function Demo() {
+  return (
+    <div>
+      <h1>Demo Page</h1>
+      <p>This is a demo page.</p>
+    </div>
+  );
 }
 
 // New AuthCallback component to handle Discord OAuth callback
@@ -79,7 +71,6 @@ function AuthCallback() {
     if (userId && username) {
       // Save user data to localStorage
       localStorage.setItem('user', JSON.stringify({ userId, username, token,  avatar}));
-      localStorage.setItem('isAuthenticated', 'true');
       console.log('User authenticated:', userId, username);
       
       // Pass params to dashboard route

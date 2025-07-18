@@ -28,12 +28,24 @@ function encrypt(userId, username) {
 router.get('/discord', passport.authenticate('discord'));
 
 // Step 2: Discord callback
+// Define a User type for clarity (if using TypeScript, use 'interface' or 'type')
+/**
+ * @typedef {Object} DiscordUser
+ * @property {string} id
+ * @property {string} username
+ * @property {string} discriminator
+ * @property {string} [avatar]
+ */
+
+// If using TypeScript, you can import or define the interface instead
+
 router.get(
   '/discord/callback',
   passport.authenticate('discord', { failureRedirect: '/' }),
   async (req, res) => {
     try {
-      const user = req.user
+      /** @type {DiscordUser} */
+      const user = /** @type {any} */ (req.user);
 
       const avatarUrl = user.avatar
         ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`

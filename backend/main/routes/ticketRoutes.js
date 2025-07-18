@@ -27,7 +27,6 @@ const router = express.Router();
 router.get('/tickets', async (req, res) => {
     try {
         const tickets = await TicketManager.list();
-        console.log(tickets);
         res.json(tickets);
     } catch (err) {
         console.error('Failed to get tickets:', err.message);
@@ -102,7 +101,7 @@ router.put('/tickets/:id', async (req, res) => {
         const ticketId = parseInt(req.params.id);
         const updatedData = req.body;
 
-        const tickets = bus.request('getTickets', {});
+        const tickets = await TicketManager.list();
         const ticketIndex = tickets.findIndex(t => t.id === ticketId);
 
         if (ticketIndex === -1) {
@@ -227,7 +226,7 @@ router.post('/tickets/:id/reply', async (req, res) => {
             return res.status(400).json({ error: "Reply content is required" });
         }
 
-        const tickets = await loadTickets();
+        const tickets = await TicketManager.list();
         const ticket = tickets.find(t => t.id === ticketId);
         if (!ticket) {
             return res.status(404).json({ error: "Ticket not found" });
