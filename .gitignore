@@ -3,7 +3,6 @@
 /backend/node_modules
 /backend/main/node_modules
 .env
-/.vs
 
 # Sentry Config File
 .env.sentry-build-plugin
@@ -11,3 +10,7 @@
 backend/main/.env
 backend/main/.env
 bfg.jar
+
+# Frontend build artifacts
+frontend/main/dist/
+frontend/main/.vite/
