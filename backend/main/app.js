@@ -11,6 +11,7 @@ import ballisticsRoutes from './routes/ballisticsRoutes.js';
 import discordroutes from './routes/discordroutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import helmet from "helmet";
 import { bus } from './utils/Commbus.js';
 import session from 'express-session';
 import passport from './passport.js';
@@ -18,6 +19,7 @@ import * as Sentry from '@sentry/node';
 
 
 const app = express();
+app.use(helmet());
 
 // Middleware
 app.use(express.json());
