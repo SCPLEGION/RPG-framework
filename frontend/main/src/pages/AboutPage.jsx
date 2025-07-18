@@ -17,6 +17,9 @@ export default function AboutPage() {
     setMiddleContent([
       <Button color="primary" variant="contained" href="https://github.com/SCPLEGION/SCPRPG-discord-bot" target="_blank" key="github">
         View on GitHub
+      </Button>,
+      <Button color="secondary" variant="contained" href="/tickets" key="tickets" sx={{ ml: 2 }}>
+        Ticket Viewer
       </Button>
     ]);
   }, [setOption, setMiddleContent]);

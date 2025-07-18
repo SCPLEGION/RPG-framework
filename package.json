@@ -47,6 +47,7 @@
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "google-tts-api": "^0.0.6",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "libsodium-wrappers": "^0.7.15",
     "livekit-client": "^2.15.2",

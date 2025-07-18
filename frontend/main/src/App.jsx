@@ -1,5 +1,6 @@
 import AboutPage from './pages/AboutPage.jsx';
 import login from './pages/login.jsx';
+import TicketViewer from './pages/TicketViewer.jsx';
 import { 
   Routes, 
   Route, 
@@ -36,6 +37,7 @@ function App() {
       <Route path="/demo" element={<Demo />} />
       <Route path="/login" element={<Login />} />
       <Route path="/login/callback" element={<AuthCallback />} />
+      <Route path="/tickets" element={<Tickets />} />
     </SentryRoutes>
   );
 }
@@ -93,6 +95,13 @@ function AuthCallback() {
   }, [navigate]);
 
   return <h1>Authenticating...</h1>;
+}
+
+function Tickets() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Tickets';
+  }, []);
+  return <TicketViewer />;
 }
 
 export default App;
