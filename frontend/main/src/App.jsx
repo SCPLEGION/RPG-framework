@@ -41,14 +41,23 @@ function App() {
 }
 
 function Home() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Home';
+  }, []);
   return <AboutPage />;
 }
 
 function Login() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Login';
+  }, []);
   return login();
 }
 
 function Demo() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Demo';
+  }, []);
   return (
     <div>
       <h1>Demo Page</h1>
@@ -62,6 +71,8 @@ function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Authenticating...';
+    
     const params = new URLSearchParams(window.location.search);
     const userId = params.get('userId');
     const username = params.get('username');

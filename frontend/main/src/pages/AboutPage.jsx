@@ -9,9 +9,9 @@ export default function AboutPage() {
   const { setOption, setMiddleContent } = useNavbar();
 
   useEffect(() => {
-    setOption("about");
+    setOption("home");
     setMiddleContent([
-      <Button color="primary" variant="contained" href="https://github.com/SCPRPG-discord-bot" target="_blank" key="github">
+      <Button color="primary" variant="contained" href="https://github.com/SCPLEGION/SCPRPG-discord-bot" target="_blank" key="github">
         View on GitHub
       </Button>
     ]);
@@ -48,7 +48,7 @@ export default function AboutPage() {
             </Button>
           </Box>
           <Grid container spacing={4} mt={2}>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box textAlign="center">
                 <EmojiEmotionsIcon sx={{ fontSize: 50, color: "#ffb300" }} />
                 <Typography variant="h6" sx={{ color: "#fff", mt: 1 }}>
@@ -59,7 +59,7 @@ export default function AboutPage() {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box textAlign="center">
                 <ExploreIcon sx={{ fontSize: 50, color: "#29b6f6" }} />
                 <Typography variant="h6" sx={{ color: "#fff", mt: 1 }}>
@@ -70,7 +70,7 @@ export default function AboutPage() {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <Box textAlign="center">
                 <GroupIcon sx={{ fontSize: 50, color: "#66bb6a" }} />
                 <Typography variant="h6" sx={{ color: "#fff", mt: 1 }}>
