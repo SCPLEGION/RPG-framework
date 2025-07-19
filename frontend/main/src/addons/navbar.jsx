@@ -12,6 +12,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import { createTheme } from '@mui/material/styles';
+import ApiService from '../services/ApiService';
 
 
 // --- Navbar context ---
@@ -41,15 +42,29 @@ export function NavbarProvider({ children }) {
   }, [theme]);
 
   useEffect(() => {
-    // Load user info from localStorage
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      try {
-        setUserInfo(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Failed to parse user info from localStorage:', e);
+    // Load user info from API instead of localStorage
+    const loadUserInfo = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const userData = await ApiService.getCurrentUser();
+          setUserInfo(userData);
+        } catch (error) {
+          console.error('Failed to load user info from API:', error);
+          // If API fails, try localStorage as fallback
+          const savedUser = localStorage.getItem('user');
+          if (savedUser) {
+            try {
+              setUserInfo(JSON.parse(savedUser));
+            } catch (e) {
+              console.error('Failed to parse user info from localStorage:', e);
+            }
+          }
+        }
       }
-    }
+    };
+
+    loadUserInfo();
   }, []);
 
   const toggleTheme = () => {
@@ -207,11 +222,11 @@ const Navbar = ({
             {/* User Avatar */}
             {userInfo && (
               <Avatar
-                src={userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.userId}/${userInfo.avatar}.png` : undefined}
+                src={userInfo.avatarUrl || undefined}
                 alt={userInfo.username}
                 sx={{ width: 32, height: 32, mr: 2 }}
               >
-                {!userInfo.avatar && userInfo.username?.charAt(0).toUpperCase()}
+                {!userInfo.avatarUrl && userInfo.username?.charAt(0).toUpperCase()}
               </Avatar>
             )}
             <IconButton onClick={toggleTheme} sx={{ color: colors[theme].text }}>

@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useNavbar } from '../addons/navbar';
-import axios from 'axios';
+import ApiService from '../services/ApiService';
 
 const TicketViewer = () => {
   const [tickets, setTickets] = useState([]);
@@ -57,37 +57,15 @@ const TicketViewer = () => {
   } = useNavbar();
 
   // Get JWT token from localStorage
-  const getAuthToken = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      return userData.token;
-    }
-    return null;
-  };
-
-  // Create axios instance with auth headers
-  const apiCall = async (url, options = {}) => {
-    const token = getAuthToken();
-    const config = {
-      ...options,
-      headers: {
-        ...options.headers,
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-    };
-    return axios(url, config);
-  };
-
   // Fetch tickets from API
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const response = await apiCall('/api/tickets');
-      setTickets(response.data || []);
+      const tickets = await ApiService.getTickets();
+      setTickets(tickets || []);
       setError(null);
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 498) {
+      if (err.message === 'Authentication expired' || err.message === 'No authentication token found') {
         setError('Authentication required. Please log in first.');
         // Optionally redirect to login
         // navigate('/login');
@@ -103,11 +81,11 @@ const TicketViewer = () => {
   // Close ticket
   const closeTicket = async (ticketId) => {
     try {
-      await apiCall(`/api/tickets/${ticketId}/close`, { method: 'POST' });
+      await ApiService.closeTicket(ticketId);
       setSuccess('Ticket closed successfully');
       fetchTickets(); // Refresh the list
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 498) {
+      if (err.message === 'Authentication expired' || err.message === 'No authentication token found') {
         setError('Authentication required. Please log in first.');
       } else {
         setError('Failed to close ticket');
@@ -120,12 +98,12 @@ const TicketViewer = () => {
   const deleteTicket = async (ticketId) => {
     if (window.confirm('Are you sure you want to delete this ticket?')) {
       try {
-        await apiCall(`/api/tickets/${ticketId}/delete`, { method: 'DELETE' });
+        await ApiService.deleteTicket(ticketId);
         setSuccess('Ticket deleted successfully');
         fetchTickets(); // Refresh the list
         setDetailDialogOpen(false);
       } catch (err) {
-        if (err.response?.status === 401 || err.response?.status === 498) {
+        if (err.message === 'Authentication expired' || err.message === 'No authentication token found') {
           setError('Authentication required. Please log in first.');
         } else {
           setError('Failed to delete ticket');
@@ -143,17 +121,13 @@ const TicketViewer = () => {
     }
 
     try {
-      await apiCall(`/api/tickets/${selectedTicket.id}/reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: { reply: replyText },
-      });
+      await ApiService.replyToTicket(selectedTicket.id, replyText);
       setSuccess('Reply sent successfully');
       setReplyText('');
       setReplyDialogOpen(false);
       fetchTickets(); // Refresh the list
     } catch (err) {
-      if (err.response?.status === 401 || err.response?.status === 498) {
+      if (err.message === 'Authentication expired' || err.message === 'No authentication token found') {
         setError('Authentication required. Please log in first.');
       } else {
         setError('Failed to send reply');

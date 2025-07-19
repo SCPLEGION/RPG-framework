@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ApiService from '../services/ApiService';
 
 const fadeInStyle = {
   animation: 'fadeInCard 0.8s cubic-bezier(.68,-0.55,.27,1.55)',
@@ -69,6 +70,8 @@ const logoStyle = {
 const Login = () => {
   const [User, setUser] = useState(null); // eslint-disable-line
   const [hover, setHover] = useState(false);
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => { // eslint-disable-line
     const params = new URLSearchParams(window.location.search);
@@ -78,11 +81,45 @@ const Login = () => {
     if (userId && username) {
       setUser({ userId, username });
     }
+
+    // Load app configuration from API
+    const loadConfig = async () => {
+      try {
+        const appConfig = await ApiService.getConfig();
+        setConfig(appConfig);
+      } catch (error) {
+        console.error('Failed to load app config:', error);
+        // Fallback configuration
+        setConfig({
+          discord: {
+            oauthUrl: '/auth/discord'
+          },
+          app: {
+            name: 'SCP RPG Discord Bot'
+          }
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadConfig();
   }, []);
 
   const handleLogin = () => {
-    window.location.href = '/auth/discord';
+    const oauthUrl = config?.discord?.oauthUrl || '/auth/discord';
+    window.location.href = oauthUrl;
   };
+
+  if (loading) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ ...cardStyle, ...fadeInStyle }}>
+          <p style={textStyle}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={containerStyle}>
