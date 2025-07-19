@@ -19,7 +19,8 @@ import * as Sentry from '@sentry/node';
 
 
 const app = express();
-app.use(helmet());
+app.use(helmet())
+
 
 // Middleware
 app.use(express.json());
