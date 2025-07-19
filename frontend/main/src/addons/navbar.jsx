@@ -9,6 +9,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
 import { createTheme } from '@mui/material/styles';
 
@@ -28,6 +29,7 @@ export function NavbarProvider({ children }) {
   const [sidebarleftdisabled, setSidebarLeftDisabled] = useState(false);
   const [sidebarrightdisabled, setSidebarRightDisabled] = useState(false);
   const [middlecontent, setMiddleContent] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('navbarOption', option);
@@ -38,12 +40,33 @@ export function NavbarProvider({ children }) {
     localStorage.setItem('navbarTheme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    // Load user info from localStorage
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        setUserInfo(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('Failed to parse user info from localStorage:', e);
+      }
+    }
+  }, []);
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   return (
-    <NavbarContext.Provider value={{ option, setOption, theme, toggleTheme,contentRight, setContentRight, contentleft, setContentLeft, sidebarleftdisabled, setSidebarLeftDisabled, sidebarrightdisabled, setSidebarRightDisabled, middlecontent, setMiddleContent }}>
+    <NavbarContext.Provider value={{ 
+      option, setOption, 
+      theme, toggleTheme,
+      contentRight, setContentRight, 
+      contentleft, setContentLeft, 
+      sidebarleftdisabled, setSidebarLeftDisabled, 
+      sidebarrightdisabled, setSidebarRightDisabled, 
+      middlecontent, setMiddleContent,
+      userInfo, setUserInfo
+    }}>
       {children}
     </NavbarContext.Provider>
   );
@@ -72,7 +95,7 @@ const Navbar = ({
   const [leftWidth, setLeftWidth] = useState(() => getStoredSidebarWidth('leftSidebarWidth', defaultSidebarWidth));
   const [rightWidth, setRightWidth] = useState(() => getStoredSidebarWidth('rightSidebarWidth', defaultSidebarWidth));
   const resizing = useRef({ side: null, startX: 0, startWidth: 0 });
-  const { option,sidebarleftdisabled,sidebarrightdisabled,leftSidebarContent,rightSidebarContent, theme, toggleTheme,middlecontent } = useNavbar();
+  const { option,sidebarleftdisabled,sidebarrightdisabled,contentleft,contentRight, theme, toggleTheme,middlecontent,userInfo } = useNavbar();
 
   const colors = {
     dark: { background: '#222', text: '#fff', hover: 'rgba(255,255,255,0.1)' },
@@ -181,6 +204,16 @@ const Navbar = ({
 
           {/* Right section */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flex: 1 }}>
+            {/* User Avatar */}
+            {userInfo && (
+              <Avatar
+                src={userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.userId}/${userInfo.avatar}.png` : undefined}
+                alt={userInfo.username}
+                sx={{ width: 32, height: 32, mr: 2 }}
+              >
+                {!userInfo.avatar && userInfo.username?.charAt(0).toUpperCase()}
+              </Avatar>
+            )}
             <IconButton onClick={toggleTheme} sx={{ color: colors[theme].text }}>
               {theme === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
@@ -231,7 +264,7 @@ const Navbar = ({
             />
           )}
           <Box sx={{ flexGrow: 1, width: '100%', overflow: 'auto', px: 1 }}>
-            {leftSidebarContent ?? <Typography variant="body2">Left Sidebar Content</Typography>}
+            {contentleft ?? <Typography variant="body2">Left Sidebar Content</Typography>}
           </Box>
         </Box>
       )}
@@ -274,7 +307,7 @@ const Navbar = ({
             />
           )}
           <Box sx={{ flexGrow: 1, width: '100%', overflow: 'auto', px: 1 }}>
-            {rightSidebarContent ?? <Typography variant="body2">Right Sidebar Content</Typography>}
+            {contentRight ?? <Typography variant="body2">Right Sidebar Content</Typography>}
           </Box>
         </Box>
       )}

@@ -9,20 +9,15 @@ import GamepadIcon from "@mui/icons-material/Gamepad";
 import StarIcon from "@mui/icons-material/Star";
 
 export default function AboutPage() {
-  const { setOption, setMiddleContent } = useNavbar();
+  const { setOption, setSidebarLeftDisabled, setSidebarRightDisabled } = useNavbar();
   const [hoveredCard, setHoveredCard] = useState(null);
 
   useEffect(() => {
     setOption("home");
-    setMiddleContent([
-      <Button color="primary" variant="contained" href="https://github.com/SCPLEGION/SCPRPG-discord-bot" target="_blank" key="github">
-        View on GitHub
-      </Button>,
-      <Button color="secondary" variant="contained" href="/tickets" key="tickets" sx={{ ml: 2 }}>
-        Ticket Viewer
-      </Button>
-    ]);
-  }, [setOption, setMiddleContent]);
+    // Disable both sidebars for the about page
+    setSidebarLeftDisabled(true);
+    setSidebarRightDisabled(true);
+  }, [setOption, setSidebarLeftDisabled, setSidebarRightDisabled]);
 
   const features = [
     {

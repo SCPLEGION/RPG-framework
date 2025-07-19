@@ -15,14 +15,15 @@ import {
   TextField,
   Alert,
   Snackbar,
-  AppBar,
-  Toolbar,
   IconButton,
   CircularProgress,
   Divider,
   List,
   ListItem,
   ListItemText,
+  ListItemIcon,
+  ListItemButton,
+  Avatar,
 } from '@mui/material';
 import {
   Refresh as RefreshIcon,
@@ -33,6 +34,7 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useNavbar } from '../addons/navbar';
 import axios from 'axios';
 
 const TicketViewer = () => {
@@ -45,6 +47,14 @@ const TicketViewer = () => {
   const [replyText, setReplyText] = useState('');
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const { 
+    setOption, 
+    setContentLeft, 
+    setContentRight, 
+    setSidebarLeftDisabled, 
+    setSidebarRightDisabled,
+    userInfo 
+  } = useNavbar();
 
   // Get JWT token from localStorage
   const getAuthToken = () => {
@@ -169,6 +179,118 @@ const TicketViewer = () => {
     fetchTickets();
   }, []);
 
+  useEffect(() => {
+    // Setup page option
+    setOption("tickets");
+    
+    // Enable both sidebars
+    setSidebarLeftDisabled(false);
+    setSidebarRightDisabled(false);
+
+    // Setup left sidebar content for navigation
+    const leftSidebarContent = (
+      <Box sx={{ pt: 2 }}>
+        <Typography variant="h6" sx={{ px: 2, mb: 2, color: '#fff' }}>
+          Navigation
+        </Typography>
+        <List>
+          <ListItemButton onClick={() => navigate('/')} sx={{ color: '#fff' }}>
+            <ListItemIcon>
+              <HomeIcon sx={{ color: '#7289da' }} />
+            </ListItemIcon>
+            <ListItemText primary="Home" />
+          </ListItemButton>
+          <ListItemButton onClick={fetchTickets} sx={{ color: '#fff' }}>
+            <ListItemIcon>
+              <RefreshIcon sx={{ color: '#7289da' }} />
+            </ListItemIcon>
+            <ListItemText primary="Refresh Tickets" />
+          </ListItemButton>
+        </List>
+        
+        <Divider sx={{ my: 2, backgroundColor: 'rgba(255,255,255,0.1)' }} />
+        
+        <Typography variant="h6" sx={{ px: 2, mb: 2, color: '#fff' }}>
+          Ticket Actions
+        </Typography>
+        <List>
+          <ListItemButton disabled sx={{ color: '#fff' }}>
+            <ListItemIcon>
+              <ViewIcon sx={{ color: '#7289da' }} />
+            </ListItemIcon>
+            <ListItemText primary="All Tickets" secondary="Select a ticket to view details" />
+          </ListItemButton>
+        </List>
+      </Box>
+    );
+
+    // Setup right sidebar content for user account info
+    const rightSidebarContent = (
+      <Box sx={{ pt: 2 }}>
+        <Typography variant="h6" sx={{ px: 2, mb: 2, color: '#fff' }}>
+          Account
+        </Typography>
+        {userInfo ? (
+          <Box sx={{ px: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+              <Avatar
+                src={userInfo.avatar ? `https://cdn.discordapp.com/avatars/${userInfo.userId}/${userInfo.avatar}.png` : undefined}
+                alt={userInfo.username}
+                sx={{ width: 64, height: 64, mb: 2 }}
+              >
+                {!userInfo.avatar && userInfo.username?.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="h6" sx={{ color: '#fff', textAlign: 'center' }}>
+                {userInfo.username}
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#bdbdbd', textAlign: 'center' }}>
+                ID: {userInfo.userId}
+              </Typography>
+            </Box>
+            
+            <List>
+              <ListItemButton sx={{ color: '#fff' }}>
+                <ListItemText primary="View Profile" />
+              </ListItemButton>
+              <ListItemButton sx={{ color: '#fff' }}>
+                <ListItemText primary="Settings" />
+              </ListItemButton>
+              <ListItemButton onClick={() => {
+                localStorage.removeItem('user');
+                navigate('/login');
+              }} sx={{ color: '#ff6b6b' }}>
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            </List>
+          </Box>
+        ) : (
+          <Box sx={{ px: 2 }}>
+            <Typography variant="body2" sx={{ color: '#bdbdbd', mb: 2 }}>
+              Not logged in
+            </Typography>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              fullWidth
+              onClick={() => navigate('/login')}
+            >
+              Login
+            </Button>
+          </Box>
+        )}
+      </Box>
+    );
+
+    setContentLeft(leftSidebarContent);
+    setContentRight(rightSidebarContent);
+
+    // Cleanup on unmount
+    return () => {
+      setContentLeft(null);
+      setContentRight(null);
+    };
+  }, [navigate, userInfo, setOption, setContentLeft, setContentRight, setSidebarLeftDisabled, setSidebarRightDisabled]);
+
   const getStatusColor = (status) => {
     switch (status) {
       case '1': return 'success';
@@ -187,26 +309,6 @@ const TicketViewer = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#23272a' }}>
-      {/* App Bar */}
-      <AppBar position="sticky" sx={{ bgcolor: '#2c2f33' }}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => navigate('/')}
-            sx={{ mr: 2 }}
-          >
-            <HomeIcon />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Ticket Viewer
-          </Typography>
-          <IconButton color="inherit" onClick={fetchTickets}>
-            <RefreshIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#fff', mb: 4 }}>
           Support Tickets
