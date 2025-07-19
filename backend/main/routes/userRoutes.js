@@ -2,6 +2,8 @@
 
 import express from 'express';
 import {getUsers ,createUser, getUser, updateUser, deleteUser } from '../controllers/userController.js';
+import { querry } from '../utils/database.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -43,6 +45,79 @@ const router = express.Router();
  *                 name: John Doe
  *                 email: johndoe@example.com
  */
+/**
+ * @swagger
+ * /api/user/me:
+ *   get:
+ *     description: Get current authenticated user information
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved current user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 discriminator:
+ *                   type: string
+ *                 avatar:
+ *                   type: string
+ *                 avatarUrl:
+ *                   type: string
+ *                 role:
+ *                   type: string
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+router.get('/user/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No valid token provided' });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret');
+    
+    // Get user from database
+    const users = await querry('SELECT * FROM users WHERE id = ?', [decoded.id]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const user = users[0];
+    
+    // Construct avatar URL if user has an avatar
+    const avatarUrl = decoded.avatar ? 
+      `https://cdn.discordapp.com/avatars/${decoded.id}/${decoded.avatar.split('/').pop().split('.')[0]}.png` : 
+      null;
+
+    const userInfo = {
+      id: user.id,
+      username: user.username,
+      discriminator: user.discriminator,
+      avatar: decoded.avatar ? decoded.avatar.split('/').pop().split('.')[0] : null,
+      avatarUrl: avatarUrl,
+      role: user.role || 'user'
+    };
+
+    res.status(200).json(userInfo);
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    res.status(500).json({ message: 'Error fetching user info', error: error.message });
+  }
+});
+
 router.post('/users', createUser);
 
 /**
