@@ -1,22 +1,36 @@
 import React, { useEffect, useState } from "react";
 import { useNavbar } from "../addons/navbar";
-import { Button, Typography, Box, Container, Grid, Paper, Card, CardContent, Chip } from "@mui/material";
+import { Button, Typography, Box, Container, Grid, Paper, Card, CardContent, Chip, Divider, Avatar, List, ListItem, ListItemAvatar, ListItemText, LinearProgress } from "@mui/material";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 import ExploreIcon from "@mui/icons-material/Explore";
 import GroupIcon from "@mui/icons-material/Group";
 import SecurityIcon from "@mui/icons-material/Security";
 import GamepadIcon from "@mui/icons-material/Gamepad";
 import StarIcon from "@mui/icons-material/Star";
+import BugReportIcon from "@mui/icons-material/BugReport";
+import FlashOnIcon from "@mui/icons-material/FlashOn";
+import FeedbackIcon from "@mui/icons-material/Feedback";
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import QuestIcon from '@mui/icons-material/AssignmentTurnedIn';
 
 export default function AboutPage() {
   const { setOption, setSidebarLeftDisabled, setSidebarRightDisabled } = useNavbar();
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [stats, setStats] = useState({
+    servers: 1245,
+    activeUsers: 76500,
+    questsCompleted: 9823,
+    shopsCreated: 245
+  });
 
   useEffect(() => {
     setOption("home");
-    // Disable both sidebars for the about page
     setSidebarLeftDisabled(true);
     setSidebarRightDisabled(true);
+
+    // Simulate fetching live stats from backend API
+    // Example: fetch("/api/stats").then(res => res.json()).then(setStats);
   }, [setOption, setSidebarLeftDisabled, setSidebarRightDisabled]);
 
   const features = [
@@ -46,7 +60,32 @@ export default function AboutPage() {
   const highlights = [
     { icon: <SecurityIcon />, text: "Secure & Reliable" },
     { icon: <GamepadIcon />, text: "Interactive Gaming" },
-    { icon: <StarIcon />, text: "Premium Experience" }
+    { icon: <StarIcon />, text: "Premium Experience" },
+    { icon: <AttachMoneyIcon />, text: "Premium Paid Service" }
+  ];
+
+  const roadmap = [
+    {
+      title: "Q3 2025",
+      points: [
+        "Implement new SCP characters and story arcs",
+        "Enhance bot AI for smarter NPC interactions",
+        "Launch mobile companion app"
+      ]
+    },
+    {
+      title: "Q4 2025",
+      points: [
+        "Add voice commands support",
+        "Integrate user-created content submission system",
+        "Expand multiplayer events and raids"
+      ]
+    }
+  ];
+
+  const team = [
+    { name: "Jacek Adamiec", role: "Lead Developer", avatar: "http://localhost:3001/api/avatar/552543606012117012" },
+    { name: "Anna Kowalska", role: "Community Manager", avatar: "http://localhost:3001/api/avatar/1307413861065953341" },
   ];
 
   return (
@@ -89,11 +128,11 @@ export default function AboutPage() {
       <Box sx={{ minHeight: "100vh" }} className="animated-bg">
         <Container maxWidth="lg" sx={{ pt: 8, pb: 8 }}>
           {/* Hero Section */}
-          <Paper 
-            elevation={12} 
-            sx={{ 
-              p: 6, 
-              background: "rgba(30,30,30,0.95)", 
+          <Paper
+            elevation={12}
+            sx={{
+              p: 6,
+              background: "rgba(30,30,30,0.95)",
               borderRadius: 4,
               backdropFilter: "blur(10px)",
               border: "1px solid rgba(255,255,255,0.1)",
@@ -102,9 +141,9 @@ export default function AboutPage() {
             className="fade-in-up"
           >
             <Box textAlign="center">
-              <Typography 
-                variant="h1" 
-                sx={{ 
+              <Typography
+                variant="h1"
+                sx={{
                   background: "linear-gradient(45deg, #7289da 30%, #99aab5 90%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -117,17 +156,17 @@ export default function AboutPage() {
               >
                 SCP RPG Discord Bot
               </Typography>
-              
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  color: "#e0e0e0", 
+
+              <Typography
+                variant="h4"
+                sx={{
+                  color: "#e0e0e0",
                   mb: 3,
                   fontWeight: 300,
                   fontSize: { xs: "1.2rem", md: "1.8rem" }
                 }}
               >
-                A feature-rich, community-driven RPG experience for your Discord server.
+                A complete paid solution: Discord bot, Minecraft mod with money, NPC shops, and quests.
               </Typography>
 
               <Box sx={{ mb: 4 }}>
@@ -148,13 +187,13 @@ export default function AboutPage() {
                   />
                 ))}
               </Box>
-              
+
               <Box display="flex" justifyContent="center" gap={2} flexWrap="wrap">
                 <Button
                   variant="contained"
                   size="large"
                   href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot"
-                  sx={{ 
+                  sx={{
                     background: "linear-gradient(45deg, #7289da 30%, #99aab5 90%)",
                     px: 4,
                     py: 1.5,
@@ -176,7 +215,7 @@ export default function AboutPage() {
                   size="large"
                   href="https://github.com/SCPLEGION/SCPRPG-discord-bot"
                   target="_blank"
-                  sx={{ 
+                  sx={{
                     borderColor: "#7289da",
                     color: "#7289da",
                     px: 4,
@@ -203,15 +242,15 @@ export default function AboutPage() {
           {/* Features Section */}
           <Grid container spacing={4}>
             {features.map((feature, index) => (
-              <Grid size={{ xs: 12, md: 4 }} key={index}>
+              <Grid item xs={12} md={4} key={index}>
                 <Card
                   elevation={8}
                   sx={{
-                    background: hoveredCard === index 
+                    background: hoveredCard === index
                       ? `linear-gradient(135deg, rgba(30,30,30,0.98) 0%, rgba(50,50,50,0.98) 100%)`
                       : "rgba(30,30,30,0.95)",
                     backdropFilter: "blur(10px)",
-                    border: hoveredCard === index 
+                    border: hoveredCard === index
                       ? `2px solid ${feature.color}`
                       : "1px solid rgba(255,255,255,0.1)",
                     borderRadius: 3,
@@ -219,7 +258,7 @@ export default function AboutPage() {
                     transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
                     cursor: "pointer",
                     transform: hoveredCard === index ? "translateY(-8px) scale(1.02)" : "translateY(0) scale(1)",
-                    boxShadow: hoveredCard === index 
+                    boxShadow: hoveredCard === index
                       ? `0 20px 40px rgba(${feature.color === "#ffb300" ? "255,179,0" : feature.color === "#29b6f6" ? "41,182,246" : "102,187,106"},0.3)`
                       : "0 8px 32px rgba(0,0,0,0.2)"
                   }}
@@ -246,11 +285,11 @@ export default function AboutPage() {
                     >
                       {feature.icon}
                     </Box>
-                    
-                    <Typography 
-                      variant="h5" 
-                      sx={{ 
-                        color: "#fff", 
+
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        color: "#fff",
                         mb: 2,
                         fontWeight: 700,
                         background: hoveredCard === index ? feature.gradient : "none",
@@ -261,10 +300,10 @@ export default function AboutPage() {
                     >
                       {feature.title}
                     </Typography>
-                    
-                    <Typography 
-                      sx={{ 
-                        color: "#bdbdbd", 
+
+                    <Typography
+                      sx={{
+                        color: "#bdbdbd",
                         lineHeight: 1.6,
                         fontSize: "1rem"
                       }}
@@ -277,63 +316,171 @@ export default function AboutPage() {
             ))}
           </Grid>
 
-          {/* Additional Info Section */}
-          <Paper 
+          {/* Stats Section */}
+          <Paper
             elevation={8}
-            sx={{ 
-              mt: 6, 
-              p: 4, 
+            sx={{
+              mt: 6,
+              p: 4,
+              background: "rgba(30,30,30,0.95)",
+              borderRadius: 3,
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+            className="fade-in-up"
+            style={{ animationDelay: "1s" }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                color: "#fff",
+                mb: 4,
+                fontWeight: 600,
+                background: "linear-gradient(45deg, #7289da 30%, #99aab5 90%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                textAlign: "center"
+              }}
+            >
+              Live Statistics
+            </Typography>
+            <Grid container spacing={4} justifyContent="center" textAlign="center">
+              <Grid item xs={6} sm={3}>
+                <AttachMoneyIcon sx={{ fontSize: 50, color: "#7289da", mb: 1 }} />
+                <Typography variant="h5" sx={{ color: "#fff", fontWeight: 700 }}>{stats.servers.toLocaleString()}</Typography>
+                <Typography variant="body2" sx={{ color: "#bdbdbd" }}>Active Servers</Typography>
+                <LinearProgress variant="determinate" value={(stats.servers / 2000) * 100} sx={{ mt: 1, bgcolor: "#444" }} />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <GroupIcon sx={{ fontSize: 50, color: "#7289da", mb: 1 }} />
+                <Typography variant="h5" sx={{ color: "#fff", fontWeight: 700 }}>{stats.activeUsers.toLocaleString()}</Typography>
+                <Typography variant="body2" sx={{ color: "#bdbdbd" }}>Active Users</Typography>
+                <LinearProgress variant="determinate" value={(stats.activeUsers / 100000) * 100} sx={{ mt: 1, bgcolor: "#444" }} />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <QuestIcon sx={{ fontSize: 50, color: "#7289da", mb: 1 }} />
+                <Typography variant="h5" sx={{ color: "#fff", fontWeight: 700 }}>{stats.questsCompleted.toLocaleString()}</Typography>
+                <Typography variant="body2" sx={{ color: "#bdbdbd" }}>Quests Completed</Typography>
+                <LinearProgress variant="determinate" value={(stats.questsCompleted / 15000) * 100} sx={{ mt: 1, bgcolor: "#444" }} />
+              </Grid>
+              <Grid item xs={6} sm={3}>
+                <StorefrontIcon sx={{ fontSize: 50, color: "#7289da", mb: 1 }} />
+                <Typography variant="h5" sx={{ color: "#fff", fontWeight: 700 }}>{stats.shopsCreated.toLocaleString()}</Typography>
+                <Typography variant="body2" sx={{ color: "#bdbdbd" }}>NPC Shops Created</Typography>
+                <LinearProgress variant="determinate" value={(stats.shopsCreated / 500) * 100} sx={{ mt: 1, bgcolor: "#444" }} />
+              </Grid>
+            </Grid>
+          </Paper>
+
+          {/* Roadmap Section */}
+          <Paper
+            elevation={8}
+            sx={{
+              mt: 6,
+              p: 4,
+              background: "rgba(30,30,30,0.95)",
+              borderRadius: 3,
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+            className="fade-in-up"
+            style={{ animationDelay: "1.2s" }}
+          >
+            <Typography
+              variant="h4"
+              sx={{
+                color: "#fff",
+                mb: 3,
+                fontWeight: 600,
+                background: "linear-gradient(45deg, #7289da 30%, #99aab5 90%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                textAlign: "center"
+              }}
+            >
+              Project Roadmap
+            </Typography>
+            <Grid container spacing={4}>
+              {roadmap.map((phase, index) => (
+                <Grid item xs={12} md={6} key={index}>
+                  <Paper
+                    sx={{
+                      background: "rgba(40,40,40,0.9)",
+                      p: 3,
+                      borderRadius: 2,
+                      border: "1px solid rgba(255,255,255,0.05)"
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ color: "#99aab5", mb: 2, fontWeight: 600 }}>
+                      {phase.title}
+                    </Typography>
+                    <List dense>
+                      {phase.points.map((point, i) => (
+                        <ListItem key={i}>
+                          <ListItemAvatar>
+                            <Avatar sx={{ bgcolor: "#7289da" }}>
+                              <FlashOnIcon />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText primary={point} sx={{ color: "#bdbdbd" }} />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
+          </Paper>
+
+          {/* Team Section */}
+          <Paper
+            elevation={8}
+            sx={{
+              mt: 6,
+              p: 4,
               background: "rgba(30,30,30,0.95)",
               borderRadius: 3,
               border: "1px solid rgba(255,255,255,0.1)",
               textAlign: "center"
             }}
             className="fade-in-up"
-            style={{ animationDelay: "0.8s" }}
+            style={{ animationDelay: "1.4s" }}
           >
-            <Typography 
-              variant="h4" 
-              sx={{ 
-                color: "#fff", 
-                mb: 2,
+            <Typography
+              variant="h4"
+              sx={{
+                color: "#fff",
+                mb: 4,
                 fontWeight: 600,
                 background: "linear-gradient(45deg, #7289da 30%, #99aab5 90%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}
             >
-              Ready to Start Your Adventure?
+              Meet the Team
             </Typography>
-            <Typography 
-              sx={{ 
-                color: "#bdbdbd", 
-                mb: 3,
-                fontSize: "1.1rem"
-              }}
-            >
-              Join thousands of Discord servers already using SCP RPG Bot for immersive roleplay experiences.
-            </Typography>
-            <Button
-              variant="contained"
-              size="large"
-              href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot"
-              sx={{ 
-                background: "linear-gradient(45deg, #7289da 30%, #99aab5 90%)",
-                px: 6,
-                py: 1.5,
-                fontSize: "1.2rem",
-                fontWeight: 600,
-                borderRadius: 3,
-                boxShadow: "0 8px 32px rgba(114,137,218,0.3)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 12px 40px rgba(114,137,218,0.4)"
-                }
-              }}
-            >
-              Get Started Now
-            </Button>
+            <Grid container spacing={4} justifyContent="center">
+              {team.map((member, index) => (
+                <Grid item xs={12} sm={4} key={index}>
+                  <Paper
+                    sx={{
+                      p: 3,
+                      background: "rgba(40,40,40,0.9)",
+                      borderRadius: 3,
+                      border: "1px solid rgba(255,255,255,0.05)"
+                    }}
+                  >
+                    <Avatar
+                      src={member.avatar}
+                      alt={member.name}
+                      sx={{ width: 100, height: 100, mx: "auto", mb: 2, border: "2px solid #7289da" }}
+                    />
+                    <Typography variant="h6" sx={{ color: "#fff", fontWeight: 700 }}>
+                      {member.name}
+                    </Typography>
+                    <Typography sx={{ color: "#bdbdbd", mb: 1 }}>{member.role}</Typography>
+                  </Paper>
+                </Grid>
+              ))}
+            </Grid>
           </Paper>
         </Container>
       </Box>

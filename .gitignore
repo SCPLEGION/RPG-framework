@@ -14,3 +14,5 @@ bfg.jar
 # Frontend build artifacts
 frontend/main/dist/
 frontend/main/.vite/
+
+/generated/prisma
