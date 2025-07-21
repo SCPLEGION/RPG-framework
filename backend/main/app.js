@@ -21,7 +21,15 @@ import * as Sentry from '@sentry/node';
 
 const app = express();
 app.use(helmet())
-
+// Middleware to time each request
+app.use((req, res, next) => {
+  const reqStart = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - reqStart;
+    console.log(`[TIMER] ${req.method} ${req.url} took ${duration}ms`);
+  });
+  next();
+});
 
 // Middleware
 app.use(express.json());
@@ -59,12 +67,12 @@ app.get('/api/swagger.yaml', (req, res) => {
 });
 
 // Use routes (these are protected)
-app.use('/api', authenticateJWT, userRoutes);
-app.use('/api', authenticateJWT, ticketRoutes);
 app.use('/auth', authRoutes);
-app.use('/api', authenticateJWT, discordroutes);
 app.use('/api/ballistics', ballisticsRoutes); // Ballistics routes (public)
 app.use('/api', configRoutes); // Config routes (public)
+app.use('/api', discordroutes);
+app.use('/api', authenticateJWT, userRoutes);
+app.use('/api', authenticateJWT, ticketRoutes);
 app.get('/api/me', authenticateJWT, (req, res) => {
   // @ts-ignore
   res.json({ user: req.user });
@@ -82,15 +90,7 @@ app.get("/debug-sentry", function mainHandler(req, res) {
 // Record server start time
 const serverStart = Date.now();
 
-// Middleware to time each request
-app.use((req, res, next) => {
-  const reqStart = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - reqStart;
-    console.log(`[TIMER] ${req.method} ${req.url} took ${duration}ms`);
-  });
-  next();
-});
+
 
 app.use(function onError(err, req, res, next) {
   // The error id is attached to `res.sentry` to be returned

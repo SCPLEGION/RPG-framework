@@ -13,6 +13,7 @@ import {
 } from 'react-router-dom';
 import React, { useEffect } from 'react';
 import * as Sentry from "@sentry/react";
+import Docs from './pages/docs.jsx';
 
 Sentry.init({
   dsn: "https://6f43f40b70527b69c77e70088e62d62e@o4508206956478464.ingest.de.sentry.io/4509587125698640",
@@ -38,6 +39,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/login/callback" element={<AuthCallback />} />
       <Route path="/tickets" element={<Tickets />} />
+      <Route path='/docs' element={<Docs />} />
     </SentryRoutes>
   );
 }

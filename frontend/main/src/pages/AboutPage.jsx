@@ -83,10 +83,16 @@ export default function AboutPage() {
     }
   ];
 
+  // Only store user IDs, not full URLs
   const team = [
-    { name: "Jacek Adamiec", role: "Lead Developer", avatar: "http://localhost:3001/api/avatar/552543606012117012" },
-    { name: "Anna Kowalska", role: "Community Manager", avatar: "http://localhost:3001/api/avatar/1307413861065953341" },
+    { name: "Jacek Adamiec", role: "Lead Developer", id: "552543606012117012" },
+    { name: "Anna Kowalska", role: "Community Manager", id: "1307413861065953341" },
   ];
+
+  // Helper to build avatar URL based on current host/port
+  const getAvatarUrl = (id) => {
+    return `${window.location.protocol}//${window.location.hostname}:${window.location.port}/api/user/avatar/${id}`;
+  };
 
   return (
     <>
@@ -469,9 +475,18 @@ export default function AboutPage() {
                     }}
                   >
                     <Avatar
-                      src={member.avatar}
+                      src={getAvatarUrl(member.id)}
                       alt={member.name}
                       sx={{ width: 100, height: 100, mx: "auto", mb: 2, border: "2px solid #7289da" }}
+                      onError={e => {
+                        e.target.onerror = null;
+                        // Fallback to Discord CDN avatar
+                        if (member.id === "552543606012117012") {
+                          e.target.src = "https://cdn.discordapp.com/avatars/552543606012117012/5ef357cc4bbad906682b65a469d75be4.webp";
+                        } else {
+                          e.target.src = `https://cdn.discordapp.com/embed/avatars/0.png`; // generic fallback
+                        }
+                      }}
                     />
                     <Typography variant="h6" sx={{ color: "#fff", fontWeight: 700 }}>
                       {member.name}
