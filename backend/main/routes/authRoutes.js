@@ -21,7 +21,9 @@ function encrypt(userId, username) {
   let encrypted = cipher.update(`${userId}:${username}`, 'utf8', 'hex');
   encrypted += cipher.final('hex');
 
-  return iv.toString('hex') + ':' + encrypted;
+  const hmac = crypto.createHmac('sha256', key).update(iv.toString('hex') + encrypted).digest('hex');
+
+  return iv.toString('hex') + ':' + encrypted + ':' + hmac;
 }
 
 // Step 1: Redirect to Discord login
