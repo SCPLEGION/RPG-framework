@@ -34,7 +34,7 @@
     "@mui/material": "^7.2.0",
     "@scalar/api-reference-react": "^0.7.30",
     "@sentry/node": "^9.38.0",
-    "@sentry/react": "^9.38.0",
+    "@sentry/react": "^9.46.0",
     "@sentry/vite-plugin": "^3.5.0",
     "@vitejs/plugin-react": "^4.6.0",
     "assemblyai": "^4.14.0",
