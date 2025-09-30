@@ -14,7 +14,6 @@ export default class AIClient {
         signal: controller.signal,
       });
 
-
       if (!res.ok) {
         const err = await res.text();
         throw new Error(`HTTP ${res.status}: ${err}`);

@@ -5,7 +5,6 @@ import './instrument.js'
 import express from 'express';
 import yaml from 'js-yaml';
 import swaggerJsdoc from 'swagger-jsdoc';
-import { authenticateJWT } from './middleware/auth.js';
 import authRoutes from './routes/authRoutes.js';
 import ballisticsRoutes from './routes/ballisticsRoutes.js';
 import configRoutes from './routes/configRoutes.js';
@@ -71,9 +70,9 @@ app.use('/auth', authRoutes);
 app.use('/api/ballistics', ballisticsRoutes); // Ballistics routes (public)
 app.use('/api', configRoutes); // Config routes (public)
 app.use('/api', discordroutes);
-app.use('/api', authenticateJWT, userRoutes);
-app.use('/api', authenticateJWT, ticketRoutes);
-app.get('/api/me', authenticateJWT, (req, res) => {
+app.use('/api', userRoutes);
+app.use('/api', ticketRoutes);
+app.get('/api/me', (req, res) => {
   // @ts-ignore
   res.json({ user: req.user });
 });

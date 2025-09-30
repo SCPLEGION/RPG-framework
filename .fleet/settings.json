@@ -23,6 +23,10 @@
         {
             "type": "add",
             "pluginName": "fleet.vite"
+        },
+        {
+            "type": "add",
+            "pluginName": "com.github.catppuccin.fleet"
         }
     ]
 }

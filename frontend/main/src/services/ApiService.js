@@ -19,7 +19,7 @@ class ApiService {
   // Get current user information
   static async getCurrentUser() {
     try {
-      const token = localStorage.getItem('token');
+      const token = JSON.parse(localStorage.getItem('user')).token || localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -56,7 +56,7 @@ class ApiService {
   // Get tickets with authentication
   static async getTickets() {
     try {
-      const token = localStorage.getItem('user').token || localStorage.getItem('token');
+      const token = JSON.parse(localStorage.getItem('user')).token || localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -82,7 +82,7 @@ class ApiService {
   // Create ticket reply
   static async replyToTicket(ticketId, content) {
     try {
-      const token = localStorage.getItem('token');
+      const token = JSON.parse(localStorage.getItem('user')).token || localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -110,7 +110,7 @@ class ApiService {
   // Close ticket
   static async closeTicket(ticketId) {
     try {
-      const token = localStorage.getItem('token');
+      const token = JSON.parse(localStorage.getItem('user')).token || localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -137,7 +137,7 @@ class ApiService {
   // Delete ticket
   static async deleteTicket(ticketId) {
     try {
-      const token = localStorage.getItem('token');
+      const token = JSON.parse(localStorage.getItem('user')).token || localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }
