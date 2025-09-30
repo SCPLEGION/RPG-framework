@@ -56,7 +56,7 @@ class ApiService {
   // Get tickets with authentication
   static async getTickets() {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('user').token || localStorage.getItem('token');
       if (!token) {
         throw new Error('No authentication token found');
       }

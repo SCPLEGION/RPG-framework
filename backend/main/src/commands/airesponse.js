@@ -19,23 +19,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const data = new SlashCommandBuilder()
   .setName('ai_vc')
-  .setDescription('AI VC: rozpoznaje głos i odpowiada na VC');
+  .setDescription('AI VC: rozpoznaje głos i odpowiada na VC')
+  .setContexts([0, 1, 2]);
 
-async function askOpenAIWithRetry(payload, retries = 2, delay = 1000) {
-  let attempt = 0;
-  while (attempt <= retries) {
-    try {
-      const response = await openai.chat.completions.create(payload);
-      return response;
-    } catch (err) {
-      console.error("Błąd AI:", err);
-    }
-    attempt++;
-    console.warn(`Retry attempt ${attempt}`);
-    await new Promise(r => setTimeout(r, delay));
-  }
-  throw new Error("Nie udało się uzyskać odpowiedzi od AI po wielu próbach.");
-}
 
 export async function execute(interaction) {
   const member = interaction.member;
@@ -110,18 +96,42 @@ export async function execute(interaction) {
       return;
     }
 
+    // 1. Definicja narzędzi (tools)
+    const tools = [
+      {
+        type: "function",
+        function: {
+          name: "generate_random_ip",
+          description: "Generuje losowy adres IP w zakresie 192.168.1.2-255",
+          parameters: {
+            type: "object",
+            properties: {},
+            required: []
+          }
+        }
+      }
+    ];
+
+    // 2. Funkcja narzędziowa po stronie bota
+    function generate_random_ip() {
+      const random = Math.floor(Math.random() * 254) + 2;
+      return `192.168.1.${random}`;
+    }
+
     const payload = {
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'Jesteś pomocnym asystentem, odpowiadaj krótko i po polsku.' },
         ...chatLog
       ],
-
+      tools, // 3. Dodajemy tools do payloadu
+      tool_choice: "auto"
     };
 
     let response;
     try {
-      response = await askOpenAIWithRetry(payload, 2);
+      // @ts-ignore
+      response = await openai.chat.completions.create(payload);
     } catch (err) {
       await interaction.channel.send('Błąd AI po kilku próbach.');
       busy = false;
@@ -129,8 +139,35 @@ export async function execute(interaction) {
     }
 
     let aiText = response.choices[0].message.content ?? '';
+    const toolMessages = [];
+    // 4. Obsługa tool calls
+    if (response.choices[0].message.tool_calls) {
+      // Dodaj odpowiedź narzędzia do chatLog jako osobny krok
+      for (const toolCall of response.choices[0].message.tool_calls) {
+        if (toolCall.function.name === "generate_random_ip") {
+          const toolResult = generate_random_ip();
+          toolMessages.push({
+            role: "tool",
+            tool_call_id: toolCall.id,
+            name: toolCall.function.name,
+            content: toolResult
+          });
+        }
+      } 
 
-    // Obsługa tool calls
+      chatLog.push(...toolMessages);
+
+      // Wywołaj ponownie OpenAI z odpowiedzią narzędzia
+      const followupPayload = {
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: 'Jesteś pomocnym asystentem, odpowiadaj krótko i po polsku. jeśli ktoś cie zapyta o ip podaj mu 127.0.0.1 lub 192.168.1.<losowy numer od 2 do 255>' },
+          ...chatLog
+        ]
+      };
+      response = await openai.chat.completions.create(followupPayload);
+      aiText = response.choices[0].message.content ?? '';
+    }
 
     if (!aiText && !response.choices[0].message.tool_calls) {
       await interaction.channel.send('Brak odpowiedzi od AI.');

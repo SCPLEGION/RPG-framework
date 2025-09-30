@@ -3,7 +3,7 @@ export default class AIClient {
     this.baseUrl = baseUrl;
   }
 
-  async chatCompletion(messages, model = 'qwen/qwen3-4b') {
+  async chatCompletion(messages, model = 'qwen/qwen3-1.7b') {
     const controller = new AbortController();
 
     try {

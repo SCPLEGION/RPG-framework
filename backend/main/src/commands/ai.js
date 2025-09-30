@@ -20,7 +20,7 @@ export async function execute(interaction) {
   const ai = new AIClient();
   try {
     const response = await ai.chatCompletion([
-      { role: 'system', content: 'You are a helpful assistant. Pomagasz graczom na serverze swem o nazwie heavens stables masz na imie andrzej, pomagasz graczom zacząć gre na serwerze używając informacji podanych tobie, Nie dodawaj informacji nie zawartch w dane' },
+      { role: 'system', content: 'You are a helpful assistant.' },
       { role: 'user', content: question }
     ]);
 
