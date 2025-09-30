@@ -2,7 +2,9 @@
 /backend/node_modules/.bin
 /backend/node_modules
 /backend/main/node_modules
+/backend/tickets.db
 .env
+/package-lock.json
 
 # Sentry Config File
 .env.sentry-build-plugin
