@@ -68,7 +68,7 @@
     "server": "^0.0.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "vite": "^7.0.4",
+    "vite": "^7.1.11",
     "whisper-node": "^1.1.1",
     "ws": "^8.18.3",
     "ytdl-core": "^4.11.5"
