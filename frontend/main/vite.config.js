@@ -45,6 +45,23 @@ export default defineConfig({
   },
 
   build: {
-    sourcemap: true
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-core': ['react', 'react-dom'],
+          'routing': ['react-router-dom'],
+          'ui': ['@mui/material', '@mui/icons-material'],
+          'sentry': ['@sentry/react'],
+        }
+      }
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
+      }
+    }
   }
 })

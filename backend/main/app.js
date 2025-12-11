@@ -16,22 +16,33 @@ import { bus } from './utils/Commbus.js';
 import session from 'express-session';
 import passport from './passport.js';
 import * as Sentry from '@sentry/node';
+import compression from 'compression';
 
 
 const app = express();
 app.use(helmet())
-// Middleware to time each request
+
+// Enable compression for all responses
+app.use(compression());
+
+// Only log slow requests in production
+const isProduction = process.env.NODE_ENV === 'production';
+const slowRequestThreshold = parseInt(process.env.SLOW_REQUEST_MS || '100', 10);
+
 app.use((req, res, next) => {
   const reqStart = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - reqStart;
-    console.log(`[TIMER] ${req.method} ${req.url} took ${duration}ms`);
+    if (!isProduction && duration > slowRequestThreshold) {
+      console.log(`[TIMER] ${req.method} ${req.url} took ${duration}ms`);
+    }
   });
   next();
 });
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Add session and passport middleware
 app.use(session({
@@ -56,13 +67,21 @@ const swaggerOptions = {
   components: ['./components/*.js'],
 };
 
-// Generate Swagger YAML once at startup
-const swaggerDocs = swaggerJsdoc(swaggerOptions);
-const swaggerYaml = yaml.dump(swaggerDocs);
+// Generate Swagger YAML once at startup and cache it
+let swaggerYaml = null;
 
-// Serve /api/swagger.yaml WITHOUT authentication
+const getSwaggerYaml = () => {
+  if (!swaggerYaml) {
+    const swaggerDocs = swaggerJsdoc(swaggerOptions);
+    swaggerYaml = yaml.dump(swaggerDocs);
+  }
+  return swaggerYaml;
+};
+
+// Serve /api/swagger.yaml WITHOUT authentication - with caching headers
 app.get('/api/swagger.yaml', (req, res) => {
-  res.type('text/yaml').send(swaggerYaml);
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.type('text/yaml').send(getSwaggerYaml());
 });
 
 // Use routes (these are protected)

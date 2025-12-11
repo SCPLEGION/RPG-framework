@@ -1,6 +1,6 @@
 // Enhanced ticketRoutes.js with JS Doc and Swagger annotations
 import express from 'express';
-import { loadTickets, saveTickets, querry,TicketManager } from "../utils/database.js";
+import { loadTickets, saveTickets, querry, TicketManager, invalidateTicketsCache } from "../utils/database.js";
 import { bus } from '../utils/Commbus.js';
 
 const router = express.Router();
@@ -53,8 +53,9 @@ router.get('/tickets', async (req, res) => {
  */
 router.get('/tickets/:id', async (req, res) => {
     try {
-        const tickets = await TicketManager.list();
-        const ticket = tickets.find(t => t.ticketNumber === parseInt(req.params.id));
+        res.set('Cache-Control', 'private, max-age=10');
+        const ticketId = parseInt(req.params.id);
+        const ticket = await TicketManager.get(ticketId);
         if (ticket) {
             res.json(ticket);
         } else {
@@ -95,7 +96,6 @@ router.get('/tickets/:id', async (req, res) => {
  *       404:
  *         description: Ticket not found
  */
-// @ts-ignore
 router.put('/tickets/:id', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
@@ -109,7 +109,8 @@ router.put('/tickets/:id', async (req, res) => {
         }
 
         tickets[ticketIndex] = { ...tickets[ticketIndex], ...updatedData };
-        bus.emit('saveTickets', tickets);
+        await saveTickets(tickets);
+        invalidateTicketsCache();
 
         res.status(200).json({ message: "Ticket updated successfully" });
     } catch (error) {
@@ -136,13 +137,13 @@ router.put('/tickets/:id', async (req, res) => {
  *       404:
  *         description: Ticket not found
  */
-// @ts-ignore
 router.delete('/tickets/:id/delete', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
-        let data = { quarry: 'DELETE FROM tickets WHERE id = ?',params:[ticketId]}
+        let data = { quarry: 'DELETE FROM tickets WHERE id = ?', params: [ticketId] }
         const result = await querry(data);
         if (result) {
+            invalidateTicketsCache();
             res.status(200).json({ message: "Ticket deleted successfully" });
         } else {
             res.status(500).json({ error: "Failed to delete ticket" });
@@ -171,7 +172,6 @@ router.delete('/tickets/:id/delete', async (req, res) => {
  *       404:
  *         description: Ticket not found
  */
-// @ts-ignore
 router.post('/tickets/:id/close', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
@@ -181,6 +181,7 @@ router.post('/tickets/:id/close', async (req, res) => {
             return res.status(404).json({ error: "Ticket not found" });
         }
 
+        invalidateTicketsCache();
         res.status(200).json({ message: "Ticket closed successfully" });
     } catch (error) {
         console.error("Error closing ticket:", error);
@@ -216,7 +217,6 @@ router.post('/tickets/:id/close', async (req, res) => {
  *       404:
  *         description: Ticket not found
  */
-// @ts-ignore
 router.post('/tickets/:id/reply', async (req, res) => {
     try {
         const ticketId = parseInt(req.params.id);
@@ -235,7 +235,8 @@ router.post('/tickets/:id/reply', async (req, res) => {
             ticket.replies = [];
         }
         ticket.replies.push(reply);
-        saveTickets(tickets);
+        await saveTickets(tickets);
+        invalidateTicketsCache();
         bus.emit('sendmsg', { channelId: ticket.channelId, msg: reply });
 
         res.status(200).json({ message: "Reply added successfully" });

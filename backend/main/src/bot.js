@@ -1,10 +1,10 @@
 // bot.js
 console.time("Bot startup");
 
-import { Client, GatewayIntentBits, Guild } from 'discord.js';
+import { Client, GatewayIntentBits } from 'discord.js';
 import dotenv from 'dotenv';
 import config from '../config.js';
-import { redirect, handleInteraction } from './modules/redirector.js';
+import { redirect } from './modules/redirector.js';
 import { querry } from '../utils/database.js';
 import { bus } from '../utils/Commbus.js';
 import fs from 'node:fs';
@@ -26,48 +26,50 @@ const client = new Client({
 
 const commands = [];
 const commandsMap = new Collection();
-
 const commandsPath = path.join(process.cwd(), 'src', 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-(async () => {
+async function loadCommands() {
+    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+    
     for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        // @ts-ignore
-        const command = await import(`file://${filePath}`);
-        if (command.data && command.execute) {
-            commands.push(command.data.toJSON());
-            commandsMap.set(command.data.name, command);
+        try {
+            const filePath = path.join(commandsPath, file);
+            const command = await import(`file://${filePath}`);
+            if (command.data && command.execute) {
+                commands.push(command.data.toJSON());
+                commandsMap.set(command.data.name, command);
+            }
+        } catch (error) {
+            console.error(`Failed to load command ${file}:`, error.message);
         }
     }
-})();
+}
+
+await loadCommands();
 
 client.once('ready', async () => {
     console.log(`Logged in as ${client.user.tag}!`);
     console.timeEnd("Bot startup");
 
-    // Register slash commands
-    const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     try {
+        const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
         await rest.put(
             Routes.applicationCommands('1354223087486505010'),
-            { body: await commands }
+            { body: commands }
         );
         console.log(`Registered ${commands.length} slash commands.`);
-        commands.forEach(cmd => {
-            console.log(`- ${cmd.name}: ${cmd.description}`);
-        });
-        // Register commands in the map for interaction handling
-        console.log('Slash commands registered.');
     } catch (error) {
         console.error('Error registering slash commands:', error);
     }
+
     const guild = client.guilds.cache.get('1353825315117334668');
-    await guild.commands.set(commands);
-    setTimeout(() => {
+    if (guild) {
+        await guild.commands.set(commands).catch(console.error);
+    }
+
+    setImmediate(() => {
         sendinfo().catch(console.error);
-        fetchavatar("552543606012117012").then(x => console.log("Test avatar:", x));
-    }, 1000);
+    });
 
     bus.emit('botReady', true);
 });
@@ -125,46 +127,66 @@ async function sendinfo() {
 async function saveUsersBatch(users) {
     if (users.length === 0) return;
 
-    const values = users.map(u => [
-        u.id,
-        u.username,
-        u.displayName,
-        u.discriminator,
-        'user',
-        0
-    ]);
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+        const batch = users.slice(i, i + BATCH_SIZE);
+        const values = batch.map(u => [
+            u.id,
+            u.username,
+            u.displayName,
+            u.discriminator,
+            'user',
+            0
+        ]);
 
-    const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
-    const flatParams = values.flat();
+        const placeholders = values.map(() => "(?, ?, ?, ?, ?, ?)").join(", ");
+        const flatParams = values.flat();
 
-    const baseSql = `INSERT INTO users (id, username, displayName, discriminator, role, token) VALUES ${placeholders}`;
-    const updateSql = config.storage === "sqlite"
-        ? `
+        const baseSql = `INSERT INTO users (id, username, displayName, discriminator, role, token) VALUES ${placeholders}`;
+        const updateSql = config.storage === "sqlite"
+            ? `
       ON CONFLICT(id) DO UPDATE SET
         username = excluded.username,
         displayName = excluded.displayName,
         discriminator = excluded.discriminator`
-        : `
+            : `
       ON DUPLICATE KEY UPDATE
         username = VALUES(username),
         displayName = VALUES(displayName),
         discriminator = VALUES(discriminator)`;
 
-    const sql = baseSql + updateSql;
+        const sql = baseSql + updateSql;
 
-    if (config.storage === "mysql") {
-        bus.emit('querry', { query: sql, params: flatParams });
-    } else {
-        await querry(sql, flatParams);
+        try {
+            if (config.storage === "mysql") {
+                bus.emit('querry', { query: sql, params: flatParams });
+            } else {
+                await querry(sql, flatParams);
+            }
+        } catch (error) {
+            console.error(`Error saving users batch ${i}:`, error.message);
+        }
     }
 }
 
+const avatarCache = new Map();
+const AVATAR_CACHE_TTL = 3600000;
+
 export async function fetchavatar(userId) {
+    const cached = avatarCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < AVATAR_CACHE_TTL) {
+        return cached.url;
+    }
+
     try {
         const guilds = client.guilds.cache;
         for (const guild of guilds.values()) {
             const member = await guild.members.fetch(userId).catch(() => null);
-            if (member) return member.user.displayAvatarURL();
+            if (member) {
+                const url = member.user.displayAvatarURL();
+                avatarCache.set(userId, { url, timestamp: Date.now() });
+                return url;
+            }
         }
         throw new Error("User not found in any guild.");
     } catch (err) {

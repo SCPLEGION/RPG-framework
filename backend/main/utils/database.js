@@ -12,8 +12,53 @@ import config from '../config.js';
 export let db;
 export let mysqlConn;
 
+// Simple LRU cache for tickets
+class SimpleCache {
+    constructor(maxSize = 100) {
+        this.maxSize = maxSize;
+        this.cache = new Map();
+        this.hits = 0;
+        this.misses = 0;
+    }
+
+    get(key) {
+        if (this.cache.has(key)) {
+            this.hits++;
+            return this.cache.get(key);
+        }
+        this.misses++;
+        return null;
+    }
+
+    set(key, value) {
+        if (this.cache.size >= this.maxSize && !this.cache.has(key)) {
+            const firstKey = this.cache.keys().next().value;
+            this.cache.delete(firstKey);
+        }
+        this.cache.set(key, value);
+    }
+
+    clear() {
+        this.cache.clear();
+    }
+
+    getStats() {
+        return {
+            hits: this.hits,
+            misses: this.misses,
+            size: this.cache.size
+        };
+    }
+}
+
+export const ticketsCache = new SimpleCache(500);
+export const usersCache = new SimpleCache(200);
+
 if (config.storage === "sqlite") {
-    db = new Database("./tickets.db")
+    db = new Database("./tickets.db");
+    db.pragma('journal_mode = WAL');
+    db.pragma('synchronous = NORMAL');
+    db.pragma('cache_size = -64000');
 
     db.exec(`
        CREATE TABLE IF NOT EXISTS [tickets] (
@@ -32,22 +77,22 @@ if (config.storage === "sqlite") {
    , [messages] text NULL
    );
 
-
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      username TEXT,
-      displayName TEXT,
-      discriminator TEXT,
-      role TEXT,
-      token TEXT
-    );
-  `);
+     CREATE TABLE IF NOT EXISTS users (
+       id TEXT PRIMARY KEY,
+       username TEXT,
+       displayName TEXT,
+       discriminator TEXT,
+       role TEXT,
+       token TEXT
+     );
+   `);
 
     db.exec(`
-    CREATE TABLE IF NOT EXISTS tickets_new AS SELECT * FROM tickets;
-    DROP TABLE tickets;
-    ALTER TABLE tickets_new RENAME TO tickets;
-  `);
+     CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
+     CREATE INDEX IF NOT EXISTS idx_tickets_userId ON tickets(userId);
+     CREATE INDEX IF NOT EXISTS idx_tickets_channelId ON tickets(channelId);
+     CREATE INDEX IF NOT EXISTS idx_users_id ON users(id);
+   `);
 
 } else if (config.storage === "mysql") {
     mysqlConn = await mysql.createConnection({
@@ -58,7 +103,9 @@ if (config.storage === "sqlite") {
         enableKeepAlive: true,
         keepAliveInitialDelay: 10000,
         connectTimeout: 10000,
-        connectionLimit: 2
+        connectionLimit: 10,
+        waitForConnections: true,
+        queueLimit: 0
     });
 
     console.debug("[Database] MySQL connection established");
@@ -77,7 +124,10 @@ if (config.storage === "sqlite") {
       closedBy VARCHAR(255),
       users TEXT,
       closingReason TEXT,
-      messages TEXT
+      messages TEXT,
+      INDEX idx_status (status),
+      INDEX idx_userId (userId),
+      INDEX idx_channelId (channelId)
     );
   `);
 
@@ -88,16 +138,29 @@ if (config.storage === "sqlite") {
       displayName VARCHAR(255),
       discriminator VARCHAR(255),
       role VARCHAR(255),
-      token VARCHAR(255)
+      token VARCHAR(255),
+      INDEX idx_id (id)
     );
   `);
 }
 
+let ticketsListCache = null;
+let ticketsListCacheTime = 0;
+const TICKETS_CACHE_TTL = 5000;
+
 export const loadTickets = async () => {
     try {
+        const now = Date.now();
+        if (ticketsListCache && now - ticketsListCacheTime < TICKETS_CACHE_TTL) {
+            return ticketsListCache;
+        }
+
         if (config.storage === "json") {
             const data = await fs.readFile("./tickets.json", "utf8");
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            ticketsListCache = parsed;
+            ticketsListCacheTime = now;
+            return parsed;
         }
 
         const query = "SELECT * FROM tickets";
@@ -111,15 +174,16 @@ export const loadTickets = async () => {
             rows = results;
         }
 
-        for (const row of rows) {
-            await updateTicketStatus(row.id);
-        }
-
-        return rows.map((row) => ({
+        const processedRows = rows.map((row) => ({
             ...row,
             messages: JSON.parse(row.messages || "[]"),
             closingReason: row.closingReason || null
         }));
+
+        ticketsListCache = processedRows;
+        ticketsListCacheTime = now;
+
+        return processedRows;
 
     } catch (err) {
         console.error("[loadTickets] Error:", err);
@@ -127,8 +191,14 @@ export const loadTickets = async () => {
     }
 };
 
+export const invalidateTicketsCache = () => {
+    ticketsListCache = null;
+    ticketsListCacheTime = 0;
+};
+
 export const saveTickets = async (tickets) => {
     console.debug("[saveTickets] Saving", tickets.length, "tickets");
+    invalidateTicketsCache();
 
     if (config.storage === "json") {
         await fs.writeFile("./tickets.json", JSON.stringify(tickets, null, 2));
