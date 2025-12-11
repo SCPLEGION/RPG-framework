@@ -1,6 +1,11 @@
 import AboutPage from './pages/AboutPage.jsx';
 import login from './pages/login.jsx';
 import TicketViewer from './pages/TicketViewer.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import Settings from './pages/Settings.jsx';
+import Profile from './pages/Profile.jsx';
+import Help from './pages/Help.jsx';
+import Admin from './pages/Admin.jsx';
 import { 
   Routes, 
   Route, 
@@ -38,8 +43,13 @@ function App() {
       <Route path="/demo" element={<Demo />} />
       <Route path="/login" element={<Login />} />
       <Route path="/login/callback" element={<AuthCallback />} />
+      <Route path="/dashboard" element={<DashboardRoute />} />
       <Route path="/tickets" element={<Tickets />} />
-      <Route path='/docs' element={<Docs />} />
+      <Route path="/profile" element={<ProfileRoute />} />
+      <Route path="/settings" element={<SettingsRoute />} />
+      <Route path="/help" element={<HelpRoute />} />
+      <Route path="/admin" element={<AdminRoute />} />
+      <Route path="/docs" element={<Docs />} />
     </SentryRoutes>
   );
 }
@@ -104,6 +114,41 @@ function Tickets() {
     document.title = 'SCP RPG Discord Bot - Tickets';
   }, []);
   return <TicketViewer />;
+}
+
+function DashboardRoute() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Dashboard';
+  }, []);
+  return <Dashboard />;
+}
+
+function ProfileRoute() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Profile';
+  }, []);
+  return <Profile />;
+}
+
+function SettingsRoute() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Settings';
+  }, []);
+  return <Settings />;
+}
+
+function HelpRoute() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Help & Support';
+  }, []);
+  return <Help />;
+}
+
+function AdminRoute() {
+  useEffect(() => {
+    document.title = 'SCP RPG Discord Bot - Admin';
+  }, []);
+  return <Admin />;
 }
 
 export default App;
